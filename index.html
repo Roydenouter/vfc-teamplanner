@@ -552,7 +552,7 @@ dialog::backdrop{background:var(--shade)}
   $('logoutBtn').addEventListener('click', async () => { await auth.signOut(); location.reload(); });
   auth.onAuthStateChanged(async u => {
     if(!u){ if(!auth.isSignInWithEmailLink(location.href)) gate.classList.add('on'); return; }
-    gate.classList.remove('on'); $('ubarMail').textContent = u.email || ''; $('ubar').classList.add('on');
+    window.tpUserEmail = u.email || ''; gate.classList.remove('on'); $('ubarMail').textContent = u.email || ''; $('ubar').classList.add('on');
     ready(u);
   });
   const shrink = file => new Promise((ok, bad) => { const img = new Image(); img.onload = () => { const s = Math.min(1, 900 / Math.max(img.width, img.height)), c = document.createElement('canvas'); c.width = Math.round(img.width * s); c.height = Math.round(img.height * s); c.getContext('2d').drawImage(img, 0, 0, c.width, c.height); ok(c.toDataURL('image/jpeg', .82)); }; img.onerror = bad; img.src = URL.createObjectURL(file); });
@@ -982,7 +982,7 @@ function problems(d){
 
 /* ================= stappen ================= */
 function stepTeam(d){
-  return `<div class="panel-head"><h2>Over het team</h2><p class="hint">Dit is de basis van je team. Je vult het één keer in; aanpassen kan later altijd hier bij Mijn team.</p></div>
+  return `<div class="panel-head"><h2>Over het team</h2><p class="hint">Dit is de basis van je team. Je vult het één keer in; aanpassen kan later via Beheer.</p></div>
     <div class="row2">
       <div class="field"><label class="label" for="b-team">Naam team</label>${(() => { const other = d.team && !ALL_TEAMS.includes(d.team); return (other||d.teamOther) ? `<input type="text" id="b-team" data-bind="team" value="${esc(d.team)}" placeholder="bv. VFC O9-3"><button type="button" class="link-btn" id="teamList" style="justify-self:start">Toch uit de lijst kiezen</button>` : `<select id="b-team" data-teamsel="1"><option value="">Kies je team</option>${TEAMS.map(([g,l])=>`<optgroup label="${esc(g)}">${l.map(t=>`<option ${t===d.team?'selected':''}>${esc(t)}</option>`).join('')}</optgroup>`).join('')}<option value="__other">Mijn team staat er niet bij</option></select>`; })()}${app.teamErr && !d.team.trim() ? '<p class="errline">Kies eerst je team uit de lijst; daarna kun je verder.</p>' : ''}<span class="hint" style="font-size:13px">Zoals op voetbal.nl, bijvoorbeeld VFC O9-3.</span></div>
     </div>
@@ -2258,6 +2258,7 @@ render();
   const [db, user, assets] = await Promise.all([claude.use('db'), claude.use('user'), claude.use('assets')]);
   app.db = db; app.assets = assets; claude.use('downloads').then(d => { app.downloads = d; }).catch(() => {});
   if(user){ try{ app.uid = await user.id(); app.owner = await user.isOwner(); app.realOwner = app.owner; }catch(e){} }
+  if(window.tpUserEmail && app.d.staff[0] && !app.d.staff[0].email){ app.d.staff[0].email = window.tpUserEmail; save(); }
   render();
   if(!db || !app.uid) return;
   subDash(app.uid);
