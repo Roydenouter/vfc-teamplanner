@@ -1999,7 +1999,8 @@ document.addEventListener('input', e=>{
   else if(x.sf){ const s = d.staff.find(y=>y.id===x.sf); if(s){ s[x.sk] = t.value; if(x.sk==='email') t.classList.toggle('bad', badMail(t.value)); } }
   else if(x.p){ const p = d.players.find(y=>y.id===x.p); if(p) p.name = t.value; refreshCount(); }
   else if(x.cp){ const p = d.players.find(y=>y.id===x.cp); if(p && p.contacts[+x.ci]){ p.contacts[+x.ci][x.ck] = t.value; if(x.ck==='email') t.classList.toggle('bad', badMail(t.value)); } }
-  else if(x.tr != null){ const tr = d.trainings[+x.tr]; if(tr) tr[x.tk] = x.tk === 'day' ? (t.value === '' ? '' : +t.value) : t.value; }
+  else if(x.tr != null){ const tr = d.trainings[+x.tr]; if(tr){ tr[x.tk] = x.tk === 'day' ? (t.value === '' ? '' : +t.value) : t.value;
+    if((x.tk === 'from' || x.tk === 'to') && t.value){ let n = 0; d.trainings.forEach((o, k) => { if(k !== +x.tr && !o[x.tk]){ o[x.tk] = t.value; n++; } }); if(n){ save(); render(); return; } } } }
   else if(x.g){ d.gather[x.g] = x.g === 'place' ? t.value : +t.value; if(x.g !== 'place'){ save(); render(); return; } }
   else if(x.att) d.att[x.att] = x.att === 'day' ? (t.value === '' ? '' : +t.value) : t.value;
   else if(x.attto){ const set = new Set(d.att.to||[]); t.checked ? set.add(x.attto) : set.delete(x.attto); d.att.to = [...set]; }
