@@ -1,0 +1,19 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() { return request.auth != null; }
+    function isAdmin() {
+      return signedIn() && request.auth.token.email_verified == true
+        && request.auth.token.email in ['roydenouter@gmail.com'];
+    }
+    function isSelf(uid) { return signedIn() && request.auth.uid == uid; }
+    match /aanvragen/{uid} {
+      allow read, write: if isAdmin() || isSelf(uid);
+      match /{rest=**} {
+        allow read, write: if isAdmin() || isSelf(uid);
+      }
+    }
+    match /register/{id} { allow read, write: if isAdmin(); }
+    match /teams/{id} { allow read, write: if isAdmin(); }
+  }
+}
