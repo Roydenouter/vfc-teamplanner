@@ -475,6 +475,7 @@ dialog::backdrop{background:var(--shade)}
 .regt .th-icon .ic{width:20px;height:20px;color:var(--pitch)}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 .reglegend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:13px;color:var(--muted)}.reglegend .ic{width:16px;height:16px;color:var(--pitch);vertical-align:-3px;margin-right:4px}
+.sync-note{display:flex;gap:6px;align-items:flex-start;margin:4px 0 0;font-size:12px;color:var(--muted)}.sync-note .ic{width:14px;height:14px;flex:none;margin-top:2px;opacity:.7}
 </style>
 
 <div class="wrap">
@@ -572,11 +573,11 @@ const S = (text, who) => ({text, who});
 const ROSTER_STEP = S('Team kiest de instellingen, de pagina maakt het rooster','team');
 const ITEMS = [
   {id:'wedstrijden', basis:true, title:'Wedstrijdprogramma', short:'Tijd, tegenstander, locatie, verzameltijd', render:'gather',
-   intro:'Het programma komt uit Sportlink. Jullie kiezen hoe lang voor de aftrap er verzameld wordt; de agenda rekent de verzameltijd per wedstrijd uit.',
-   steps:[S('Wedstrijdprogramma wordt automatisch gecontroleerd: om de 4 uur, op vrijdag elk uur en vanaf vrijdag 18:00 elk kwartier tot de aftrap','auto'),S('Wedstrijd staat in de agenda met tijd, tegenstander, locatie en verzameltijd','auto'),S('Vrijdag: mail met de wedstrijden van het weekend, inclusief veld, kleedkamer en bij uit het adres','auto'),S('Contactpersonen zien alles in hun eigen agenda','ouder')]},
+   intro:'Het programma komt uit Voetbal.nl (Sportlink). Jullie kiezen hoe lang voor de aftrap er verzameld wordt; de agenda rekent de verzameltijd per wedstrijd uit.',
+   steps:[S('Wedstrijdprogramma wordt automatisch gecontroleerd: om de 4 uur, op vrijdag elk uur en vanaf vrijdag 18:00 elk kwartier tot de aftrap','auto'),S('Wedstrijd staat in de agenda met tijd, tegenstander, locatie en verzameltijd','auto'),S('Donderdag: mail met de wedstrijdinformatie (aftrap, verzamelen, veld, kleedkamer en bij uit het adres met een link voor de route) en de vraag of je kind er is','auto'),S('Contactpersonen zien alles in hun eigen agenda','ouder')]},
   {id:'wijzigingen', basis:true, title:'Wijzigingen en afgelastingen', short:'Van een wedstrijd', render:'late',
-   intro:'Sportlink is meestal actueel: een wijziging of afgelasting staat snel in de agenda en iedereen krijgt automatisch een mail. Op de wedstrijddag zelf kan het sneller gaan dan Sportlink, bijvoorbeeld als het veld ’s ochtends wordt afgekeurd. Spreek af wie dat dan in de agenda zet; de mail gaat daarna vanzelf naar iedereen.',
-   steps:[S('Sportlink wijzigt tijd of locatie, of gelast af','auto'),S('De agenda neemt het over; op speeldagen binnen een kwartier','auto'),S('Iedereen krijgt direct een mail','auto'),S('Plotse wijziging op de dag zelf: de afgesproken persoon zet die in de agenda','team')]},
+   intro:'Voetbal.nl (Sportlink) is meestal actueel: een wijziging of afgelasting staat snel in de agenda en iedereen krijgt automatisch een mail. Op de wedstrijddag zelf kan het sneller gaan dan Voetbal.nl (Sportlink), bijvoorbeeld als het veld ’s ochtends wordt afgekeurd. Spreek af wie dat dan in de agenda zet; de mail gaat daarna vanzelf naar iedereen.',
+   steps:[S('Voetbal.nl (Sportlink) wijzigt tijd of locatie, of gelast af','auto'),S('De agenda neemt het over; op speeldagen binnen een kwartier','auto'),S('Iedereen krijgt direct een mail','auto'),S('Plotse wijziging op de dag zelf: de afgesproken persoon zet die in de agenda','team')]},
   {id:'trainingen', basis:true, title:'Trainingen', short:'Dagen, tijden, veld en afgelasting', render:'trainings',
    intro:'De vaste trainingen staan als terugkerende afspraak in de agenda. Gaat een training niet door, dan horen contactpersonen dat via dezelfde weg.',
    steps:[S('Team geeft de vaste trainingsmomenten door','team'),S('Trainingen staan elke week in de agenda','auto'),S('Gaat een training niet door, dan zet het team hem op afgelast','team'),S('Contactpersonen krijgen een mail','auto')]},
@@ -840,7 +841,7 @@ const stepsHTML = i => `<ol class="steps">${i.steps.map((s,n)=>`<li class="step 
 function rosterHTML(d, i, openKey){
   const cfg = d.cfg[i.id], res = build(d, i, cfg, d.season), r = i.roster, LIMIT = 8, open = !!app.open[openKey];
   const shown = open ? res.rows : res.rows.slice(0, LIMIT), ex = exclNames(d, cfg);
-  const est = r.unit === 'wedstrijd' ? `<p class="hint">De echte wedstrijddata komen straks uit Sportlink. Tot die tijd rekent de pagina met elke ${DAYS.filter(([,v])=>cfg.days.includes(v)).map(([n])=>n).join('/')}${cfg.which!=='alle'?', om en om thuis en uit':''}.</p>` : '';
+  const est = r.unit === 'wedstrijd' ? `<p class="hint">De echte wedstrijddata komen straks uit Voetbal.nl (Sportlink). Tot die tijd rekent de pagina met elke ${DAYS.filter(([,v])=>cfg.days.includes(v)).map(([n])=>n).join('/')}${cfg.which!=='alle'?', om en om thuis en uit':''}.</p>` : '';
   const table = res.rows.length ? `<div class="tablewrap"><table>
       <thead><tr><th>Datum</th><th>${r.unit==='wedstrijd'?'Wedstrijd':'Moment'}</th><th>Aan de beurt</th></tr></thead>
       <tbody>${shown.map(row=>`<tr><td class="date">${fmt(row.date)}</td><td>${esc(row.label)}${cfg.time?` <small>${esc(cfg.time)}</small>`:''}</td><td>${row.who.length ? row.who.map(p=>`<span class="who">${esc(p.name)} <small>(${esc(cnames(p)||'–')})</small></span>`).join('') : '<small>nog niemand beschikbaar</small>'}</td></tr>`).join('')}</tbody></table></div>
@@ -885,6 +886,15 @@ function beurtenHTML(d){
     <div class="tablewrap"><table><thead><tr><th>Speler</th>${tasks.map(i=>`<th class="nc">${esc(i.title)}</th>`).join('')}<th class="nc">Totaal</th></tr></thead>
       <tbody>${rows.map(r=>`<tr><td><b>${esc(r.p.name)}</b> <small>${esc(cnames(r.p))}</small></td>${r.cells}<td class="nc tot">${r.tot}</td></tr>`).join('')}</tbody></table></div></article>`;
 }
+function recvText(d){
+  const me = slist(d)[0], meMail = (window.tpUserEmail || '').toLowerCase();
+  const isMe = s => s && (meMail ? (s.email || '').toLowerCase() === meMail : s === me);
+  const ids = attList(d), people = ids.map(id => staffById(d, id)).filter(Boolean);
+  if(!people.length) return 'De trainer krijgt een overzicht van de aanwezige spelers';
+  const names = people.sort((a, b) => (isMe(b) ? 1 : 0) - (isMe(a) ? 1 : 0)).map(s => isMe(s) ? 'Jij' : (s.name || s.role));
+  const list = names.length > 1 ? names.slice(0, -1).join(', ') + ' en ' + names.at(-1) : names[0];
+  return `${list} ${names.length > 1 ? 'krijgen' : (names[0] === 'Jij' ? 'krijgt' : 'krijgt')} een overzicht van de aanwezige spelers`;
+}
 function automationHTML(d){
   const on = id => !!d.on[id], ev = [], MATCH = 6;
   const late = staffById(d, d.late);
@@ -893,27 +903,25 @@ function automationHTML(d){
   if(on('oefenstof')) ev.push({day:1, ic:'oefenstof', text:'Oefenstof van de week bij de trainingen in de agenda', who:'auto', sort:'01'});
   if(on('spelbegeleider')) ev.push({day:3, ic:'spelbegeleider', text:'Herinnering spelbegeleider (thuiswedstrijd)', who:'auto', sort:'02'});
   const attTo = attList(d).map(id => staffById(d, id)).filter(Boolean).map(staffLabel);
-  ev.push({day:4, ic:'mail', time:'18:00', text:'Ouders/verzorgers van alle spelers krijgen een mail: komt je kind wel of niet?', who:'auto', sort:'18:00'});
+  ev.push({day:4, ic:'mail', time:'18:00', text:'Alle ouders/verzorgers krijgen de wedstrijdinformatie: aftrap, verzamelen, veld en kleedkamer, bij uit het adres met een link voor de route. Met de vraag of hun kind er is.', who:'auto', sort:'18:00'});
   ev.push({day:5, ic:'bell', time:'18:00', text:'Herinnering aan ouders die nog niets hebben laten weten', who:'auto', sort:'18:00a'});
-  ev.push({day:5, ic:'people', time:'21:30', text:`Overzicht wie er komen naar ${attTo.length ? attTo.join(' en ') : 'de trainer'}`, who:'auto', sort:'21:30'});
-  ev.push({day:5, ic:'sync', time:'00:00', text:'Wedstrijdprogramma wordt vanaf nu elk uur gecontroleerd', who:'auto', sort:'00:00'});
-  ev.push({day:5, ic:'mail', text:'Mail aan iedereen met de wedstrijd van het weekend: aftrap, verzamelen, veld en kleedkamer, bij uit ook het adres', who:'auto', sort:'03'});
+  ev.push({day:5, ic:'people', time:'21:30', text:recvText(d), who:'auto', sort:'21:30'});
+  if(on('shirts')) ev.push({day:5, ic:'shirts', text:'Herinnering: de schone shirts mee naar de wedstrijd', who:'auto', sort:'03'});
   if(on('ballen')) ev.push({day:5, ic:'ballen', text:'Herinnering wedstrijdballen', who:'auto', sort:'04'});
   if(on('siroop')) ev.push({day:5, ic:'siroop', text:'Herinnering siroop (thuiswedstrijd)', who:'auto', sort:'05'});
   if(on('rijden')) ev.push({day:5, ic:'rijden', text:'Herinnering rijders met vertrekplek (uitwedstrijd)', who:'auto', sort:'06'});
-  ev.push({day:5, ic:'sync', time:'18:00', text:'Wedstrijdprogramma wordt elk kwartier gecontroleerd, tot de aftrap', who:'auto', sort:'18:00b'});
   if(on('shirts')) ev.push({day:MATCH, ic:'shirts', text:'Herinnering: wie neemt de shirts mee naar huis', who:'auto', sort:'07'});
   const k = toMin('10:00');
   ev.push({day:MATCH, ic:'clock', time:'bijv. aftrap 10:00', text:`Verzamelen ${fromMin(k - (+d.gather.home||0))} thuis, ${fromMin(k - (+d.gather.away||0))} uit${d.gather.place?' ('+d.gather.place+')':''}; de agenda rekent dit per wedstrijd uit`, who:'auto', sort:'08'});
   ev.push({day:MATCH, ic:'pitch', text:'Wedstrijd', who:'ouder', sort:'09'});
-  ev.push({day:MATCH, ic:'alert', text:`Plotse wijziging? ${late ? staffLabel(late) : 'De afgesproken persoon'} zet die in de agenda; de mail gaat vanzelf`, who:'team', sort:'10'});
+  ev.push({day:MATCH, ic:'alert', text:`Plotse wijziging? ${late ? (late === slist(d)[0] && !window.tpUserEmail || (window.tpUserEmail && (late.email||'').toLowerCase() === window.tpUserEmail.toLowerCase()) ? 'Jij zet' : staffLabel(late) + ' zet') : 'De afgesproken persoon zet'} die in de agenda; de mail gaat vanzelf`, who:'team', sort:'10'});
   const evHTML = e => `<div class="ev ${e.who}">${e.ic ? `<span class="ev-ic">${icon(e.ic)}</span>` : ''}<span class="ev-t">${e.time?`<b>${esc(e.time)}</b>`:''}${esc(e.text)}</span></div>`;
   const rows = WEEK.map(v => {
     const items = ev.filter(e => e.day === v).sort((a,b) => String(a.sort).localeCompare(String(b.sort)));
-    return `<div class="wrow${v===MATCH?' match':''}"><div class="wday"><span class="band${v===5?' fri':v===MATCH?' sat':''}"></span><b>${DFULL[v]}</b>${v===MATCH?'<small>speeldag</small>':''}</div><div class="witems">${items.length ? items.map(evHTML).join('') : '<span class="wnone">–</span>'}</div></div>`;
+    return `<div class="wrow${v===MATCH?' match':''}"><div class="wday"><b>${DFULL[v]}</b>${v===MATCH?'<small>speeldag</small>':''}</div><div class="witems">${items.length ? items.map(evHTML).join('') : '<span class="wnone">–</span>'}</div></div>`;
   }).join('');
   const always = [
-    ['auto','Wijziging of afgelasting in Sportlink: de agenda past zich aan en iedereen krijgt een mail.', 'sync'],
+    ['auto','Wijziging of afgelasting in Voetbal.nl (Sportlink): de agenda past zich aan en iedereen krijgt een mail.', 'sync'],
     ['club','Mededeling van de club: komt per mail bij alle ouders/verzorgers.', 'mail']
   ];
   if(on('bardienst')){ const n = d.cfg.bardienst.dates.filter(Boolean).length; always.push(['auto', `Bardienst: herinnering een week voor elke dienst (${n} ${n===1?'dienst':'diensten'}).`, 'bardienst']); }
@@ -922,7 +930,7 @@ function automationHTML(d){
     <div class="card-head"><div><div class="kind">Zo loopt een gewone week</div><h3>Wat er voor jullie automatisch gebeurt</h3><p>Zo ziet een gewone week eruit. Geel gaat vanzelf, bij de andere kleuren doet iemand iets.</p></div></div>
     <div class="legend"><span class="tag auto">Automatisch</span><span class="tag team">Team</span><span class="tag ouder">Ouders</span><span class="tag club">Club</span></div>
     <div class="weekrows">${rows}</div>
-    <div class="bandlabels"><span><i style="background:var(--t-auto-bg)"></i>Automatische controle op wijzigingen in het wedstrijdprogramma: om de 4 uur</span><span><i style="background:var(--band-mid)"></i>Vrijdag: elk uur</span><span><i style="background:var(--pitch)"></i>Vrijdag 18:00 tot de aftrap: elk kwartier, daarna weer om de 4 uur</span></div></div>
+    <p class="sync-note">${icon('sync')} Op de achtergrond controleren we het wedstrijdprogramma op Voetbal.nl (Sportlink): normaal om de 4 uur, op vrijdag elk uur en vanaf vrijdag 18:00 elk kwartier tot de aftrap.</p></div>
     <div class="group"><span class="label">Door het hele seizoen</span><div class="always">${always.map(([w,t,ic]) => evHTML({who:w, text:t, ic})).join('')}</div></div>
   </article>`;
 }
@@ -1022,7 +1030,7 @@ function basisBody(d, i){
       <div class="field"><label class="label" for="g-away">Verzamelen bij uitwedstrijden</label><select id="g-away" data-g="away">${GATHER.map(m=>`<option value="${m}" ${+d.gather.away===m?'selected':''}>${m} minuten voor de aftrap</option>`).join('')}</select></div>
       <div class="field"><label class="label" for="g-place">Verzamelplek bij uitwedstrijden</label><input type="text" id="g-place" data-g="place" value="${esc(d.gather.place)}" placeholder="bv. parkeerplaats clubhuis"></div></div>
     <p class="hint">Voorbeeld: aftrap 10:00 betekent verzamelen om ${fromMin(600 - d.gather.home)} thuis en ${fromMin(600 - d.gather.away)} uit.</p>`;
-  if(i.render === 'late') return `<div class="field" style="max-width:420px"><label class="label" for="late">Plotse wijziging op de wedstrijddag die nog niet in Sportlink staat: wie geeft die door?</label>
+  if(i.render === 'late') return `<div class="field" style="max-width:420px"><label class="label" for="late">Plotse wijziging op de wedstrijddag die nog niet in Voetbal.nl (Sportlink) staat: wie geeft die door?</label>
       <select id="late" data-late="1"><option value="">${st.length ? 'Kies iemand van de staf' : 'Voeg eerst bij Team een trainer of leider toe'}</option>${st.map(s=>`<option value="${s.id}" ${s.id===d.late?'selected':''}>${esc(staffLabel(s))}</option>`).join('')}</select></div>`;
   if(i.render === 'trainings') return `<div class="group"><span class="label">Trainingsmomenten</span>
     <div class="trows">${d.trainings.map((t,k)=>`<div class="trow">
@@ -1497,7 +1505,7 @@ function viewDash(){
         <div class="hrec"><b class="hi">${st.w}</b><span>W</span><b>${st.g}</b><span>G</span><b>${st.v}</b><span>V</span></div>
         <div class="form-row"><span class="label">Vorm</span>${st.form.length ? st.form.map(dot).join('') : '<span class="hint">nog geen uitslagen</span>'}</div>
       </div>
-      <div class="hmatches">${upcoming.length ? upcoming.slice(0, 3).map((m, k) => mcard(m, k === 0)).join('') : '<p class="hint">Nog geen wedstrijden bekend. Ze komen straks vanzelf uit Sportlink.</p>'}</div>
+      <div class="hmatches">${upcoming.length ? upcoming.slice(0, 3).map((m, k) => mcard(m, k === 0)).join('') : '<p class="hint">Nog geen wedstrijden bekend. Ze komen straks vanzelf uit Voetbal.nl (Sportlink).</p>'}</div>
     </section>
     ${detail}
     ${app.mDraft ? editor() : ''}
@@ -1817,10 +1825,10 @@ function standHTML(rec, dash, uidv){
   const editing = app.standEdit === rec.key;
   const txt = (dash.stand || []).map(r => `${r.team};${r.g};${r.p};${r.ds}`).join('\n');
   return `<div class="card stand"><div class="card-head" style="align-items:center"><div class="kind">Stand</div>${app.owner && !editing ? `<button type="button" class="link-btn" data-standedit="${esc(rec.key)}">Stand bijwerken</button>` : ''}</div>
-    ${editing ? `<p class="hint">Eén team per regel: team;gespeeld;punten;doelsaldo. Straks komt dit vanzelf uit Sportlink.</p><textarea id="standtxt" rows="8" style="font-family:ui-monospace,Consolas,monospace;font-size:13px" placeholder="VFC O11-3;5;13;+12">${esc(txt)}</textarea>
+    ${editing ? `<p class="hint">Eén team per regel: team;gespeeld;punten;doelsaldo. Straks komt dit vanzelf uit Voetbal.nl (Sportlink).</p><textarea id="standtxt" rows="8" style="font-family:ui-monospace,Consolas,monospace;font-size:13px" placeholder="VFC O11-3;5;13;+12">${esc(txt)}</textarea>
       <div class="btns"><button type="button" class="primary" data-standsave="${esc(uidv)}|${esc(rec.key)}">Opslaan</button><button type="button" class="ghost" data-standcancel="1">Annuleren</button></div>`
     : rows.length ? `<div class="tablewrap"><table><thead><tr><th class="nc">#</th><th>Team</th><th class="nc">G</th><th class="nc">Pnt</th><th class="nc">DS</th></tr></thead><tbody>${rows.map((r,k) => `<tr class="${/^VFC\b/i.test(r.team) && r.team.replace(/\s+/g,'').toUpperCase().includes(rec.team.replace(/^VFC\s*/i,'').replace(/\s+/g,'').toUpperCase()) ? 'me' : ''}"><td class="nc">${k+1}</td><td>${esc(r.team)}</td><td class="nc">${r.g}</td><td class="nc"><b>${r.p}</b></td><td class="nc">${r.ds > 0 ? '+' : ''}${r.ds}</td></tr>`).join('')}</tbody></table></div>`
-    : '<p class="hint">De stand komt straks vanzelf uit Sportlink. Vanaf O11 publiceert de KNVB standen en uitslagen.</p>'}</div>`;
+    : '<p class="hint">De stand komt straks vanzelf uit Voetbal.nl (Sportlink). Vanaf O11 publiceert de KNVB standen en uitslagen.</p>'}</div>`;
 }
 document.addEventListener('click', async e => {
   const b = e.target.closest('button'); if(!b || dlg.contains(b)) return; const x = b.dataset;
@@ -1870,7 +1878,7 @@ function renderDialog(){
       h += sec(++n, r.unit==='training' ? 'Op welke dag(en) wordt er getraind' : 'Op welke dag wordt er gespeeld', `
         <div class="daypick">${(r.unit==='training' ? DAYS.filter(([,v]) => TRAIN_DAYS.includes(v)) : DAYS).map(([nm,v])=>`<label><input type="checkbox" data-day="${v}" ${c.days.includes(v)?'checked':''} aria-label="${nm}"><span>${nm}</span></label>`).join('')}</div>
         ${r.unit==='wedstrijd' ? `<div class="field"><span class="label">Welke wedstrijden</span><div class="seg">${[['alle','Alle'],['thuis','Alleen thuis'],['uit','Alleen uit']].map(([v,l])=>`<label><input type="radio" name="which" data-which="${v}" ${c.which===v?'checked':''}><span>${l}</span></label>`).join('')}</div></div>
-          ${c.which!=='alle' ? `<div class="field"><span class="label">Eerste wedstrijd is</span><div class="seg"><label><input type="radio" name="fh" data-fh="1" ${c.firstHome?'checked':''}><span>Thuis</span></label><label><input type="radio" name="fh" data-fh="0" ${!c.firstHome?'checked':''}><span>Uit</span></label></div><p class="hint">Voorlopig om en om; later komen thuis en uit uit Sportlink.</p></div>` : ''}` : ''}`,
+          ${c.which!=='alle' ? `<div class="field"><span class="label">Eerste wedstrijd is</span><div class="seg"><label><input type="radio" name="fh" data-fh="1" ${c.firstHome?'checked':''}><span>Thuis</span></label><label><input type="radio" name="fh" data-fh="0" ${!c.firstHome?'checked':''}><span>Uit</span></label></div><p class="hint">Voorlopig om en om; later komen thuis en uit uit Voetbal.nl (Sportlink).</p></div>` : ''}` : ''}`,
         r.unit==='training' ? (validTr(app.d).length ? `Overgenomen van de trainingsmomenten bij Basis (${esc(validTr(app.d).map(t=>`${DN[+t.day]} ${t.from||''}${t.to?'–'+t.to:''}`).join(', '))}). Pas aan als de begeleiding niet bij elke training nodig is.` : 'Twee keer per week trainen? Vink beide dagen aan.') : '');
       const s = draft.season;
       h += sec(++n, 'Periode', `
