@@ -1767,6 +1767,7 @@ const onField = c => c.field + (c.keeper ? 1 : 0);
 function wsRule(c, n){
   const r = c.rules[n]; if(r) return r;
   const of = onField(c);
+  if(c.keeperFixed) return {interval: n <= of ? 'geen' : (c.defInt || '15'), keeper:'vast'};
   return {interval: n <= of ? 'geen' : n === of + 1 ? '10' : '5', keeper:'periode'};
 }
 function matchMins(m){
@@ -1930,12 +1931,14 @@ const RULES_ALL = 'https://www.knvb.nl/assist-wedstrijdsecretarissen/veldvoetbal
 function teamCat(team){
   const m = /\b(JO|MO|O)(\d+)/i.exec(team || ''); if(!m) return null;
   const girls = /^MO$/i.test(m[1]), age = +m[2];
-  if(girls) return {label:'MO' + age, desc:'wedstrijdvorm volgens de KNVB', rules:RULES_ALL, stand:true, ws:null};
+  /* Vanaf O13: 11 tegen 11 op een heel veld, vaste keeper. Speeltijd volgens de KNVB. */
+  const big = a => { const min = a <= 13 ? 30 : a <= 15 ? 35 : a <= 17 ? 40 : 45; return {desc:`11 tegen 11, 2 × ${min} minuten`, ws:{periods:2, periodMin:min, field:10, keeper:true, keeperFixed:true, defInt:'15'}}; };
+  if(girls && age >= 13){ const b = big(age); return {label:'MO' + age, desc:b.desc, rules:RULES_ALL, stand:true, ws:b.ws}; }
   if(age <= 7) return {label:'O7', desc:'4 tegen 4, wedstrijdjes van 15 minuten', rules:'https://www.knvb.nl/downloads/bestand/27158/infographic-4t4-o7', stand:false, ws:{periods:1, periodMin:15, field:4, keeper:false}};
   if(age <= 9) return {label:'O' + age, desc:'6 tegen 6, 2 × 20 minuten', rules:RULES_6, stand:false, ws:{periods:4, periodMin:10, field:5, keeper:true}};
   if(age === 10) return {label:'O10', desc:'6 tegen 6, 2 × 25 minuten', rules:RULES_6, stand:false, ws:{periods:2, periodMin:25, field:5, keeper:true}};
   if(age <= 12) return {label:'O' + age, desc:'8 tegen 8, 2 × 30 minuten', rules:RULES_8, stand:true, ws:{periods:4, periodMin:15, field:7, keeper:true}};
-  return {label:'O' + age, desc:'9 tegen 9 of 11 tegen 11', rules:RULES_ALL, stand:true, ws:null};
+  const b = big(age); return {label:'O' + age, desc:b.desc, rules:RULES_ALL, stand:true, ws:b.ws};
 }
 function standHTML(rec, dash, uidv){
   const rows = (dash.stand || []).slice().sort((a,b) => (b.p - a.p) || (b.ds - a.ds) || (a.g - b.g));
@@ -2280,9 +2283,9 @@ function wsTab(rec, dash, uidv){
           <div class="field"><span class="label">Wedstrijdvorm</span><ul class="ws-form">${(() => { const [vs, dur] = cat && cat.desc ? cat.desc.split(', ') : []; return [
             vs ? ['pitch', vs] : null,
             dur ? ['clock', dur] : ['clock', `${c.periods * c.periodMin} minuten`],
-            c.periods > 1 ? ['blocks', `${c.periods} blokken van ${c.periodMin} minuten`] : null,
+            c.periods > 2 ? ['blocks', `${c.periods} blokken van ${c.periodMin} minuten`] : null,
             ['people', `${c.field} veldspelers`],
-            c.keeper ? ['glove', '1 keeper'] : null
+            c.keeper ? ['glove', c.keeperFixed ? '1 vaste keeper' : '1 keeper'] : null
           ].filter(Boolean).map(([i, t]) => `<li>${icon(i)}<span>${esc(t)}</span></li>`).join(''); })()}</ul></div>
           ${lu.n > of ? `<div class="field"><label class="label" for="wsiv">Wissel elke</label>${sel('id="wsiv" data-wsset="interval"', ivs, cur)}</div>
           ${c.keeper ? `<div class="field"><label class="label" for="wskp">Keepers</label>${sel('id="wskp" data-wsset="keeper"', WS_KEEP, lu.rule.keeper)}</div>` : ''}` : `<p class="hint" style="margin:0">Met ${lu.n} spelers wordt er niet gewisseld. Deze wedstrijd telt niet mee voor de verdeling.</p>`}
