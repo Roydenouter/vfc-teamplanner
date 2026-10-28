@@ -368,6 +368,12 @@ td.tot{font-weight:700}
 .tl-ic{color:var(--pitch)}.tl-ic .ic{width:26px;height:26px}
 .tl-go{margin-left:auto;color:var(--pitch);font-weight:700;font-size:18px}
 .stand tr.me td{background:var(--pitch-soft);font-weight:700}
+.stand tr.z-top td:first-child{box-shadow:inset 3px 0 0 var(--ok)}.stand tr.z-bot td:first-child{box-shadow:inset 3px 0 0 var(--bad)}
+.zlegend{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin:8px 0 0}.zlegend span{width:10px;height:10px;border-radius:2px;display:inline-block}.zlegend .zt{background:var(--ok)}.zlegend .zb{background:var(--bad);margin-left:10px}
+.sform{white-space:nowrap}.sform i{display:inline-flex;width:17px;height:17px;align-items:center;justify-content:center;font-style:normal;font-size:10.5px;font-weight:700;border-radius:3px;margin-right:2px;color:#fff}
+.sform .fW{background:var(--ok)}.sform .fG{background:#8a877c}.sform .fV{background:var(--bad)}
+.seg.mini{display:inline-flex;border:1px solid var(--line);border-radius:999px;padding:2px;gap:2px;margin-left:auto}.seg.mini button{border:0;background:none;color:var(--muted);font:inherit;font-size:13px;font-weight:600;padding:3px 12px;border-radius:999px;cursor:pointer}.seg.mini button.on{background:var(--pitch);color:var(--chalk)}
+@media (max-width:520px){.stand .sform{display:none}}
 
 .dgrid2{grid-template-columns:minmax(0,3fr) minmax(0,2fr)!important}
 @media (max-width:760px){.dgrid2{grid-template-columns:1fr!important}}
@@ -1942,15 +1948,25 @@ function teamCat(team){
   const b = big(age); return {label:'O' + age, desc:b.desc, rules:RULES_ALL, stand:true, ws:b.ws};
 }
 function standHTML(rec, dash, uidv){
-  const rows = (dash.stand || []).slice().sort((a,b) => (b.p - a.p) || (b.ds - a.ds) || (a.g - b.g));
-  const editing = app.standEdit === rec.key;
-  const txt = (dash.stand || []).map(r => `${r.team};${r.g};${r.p};${r.ds}`).join('\n');
-  return `<div class="card stand"><div class="card-head" style="align-items:center"><div class="kind">Stand</div>${app.owner && !editing ? `<button type="button" class="link-btn" data-standedit="${esc(rec.key)}">Stand bijwerken</button>` : ''}</div>
+  const all = dash.stand || [], split = all.length && all.every(r => r.home && r.away);
+  const view = split && ['thuis','uit'].includes(app.standView) ? app.standView : 'alle';
+  const pick = r => view === 'thuis' ? {...r.home, team:r.team} : view === 'uit' ? {...r.away, team:r.team} : r;
+  const rows = all.map(pick).sort((a,b) => (b.p - a.p) || (b.ds - a.ds) || (a.g - b.g));
+  const editing = app.standEdit === rec.key, n = rows.length;
+  const txt = all.map(r => `${r.team};${r.g};${r.p};${r.ds}`).join('\n');
+  const isMe = r => /^VFC\b/i.test(r.team) && r.team.replace(/\s+/g,'').toUpperCase().includes(rec.team.replace(/^VFC\s*/i,'').replace(/\s+/g,'').toUpperCase());
+  const zone = k => view !== 'alle' || n < 4 ? '' : k === 0 ? 'z-top' : k >= n - 2 ? 'z-bot' : '';
+  const hasForm = rows.some(r => r.form);
+  const fcell = f => `<td class="sform">${(f || '').split('').slice(-5).map(c => `<i class="f${c}">${c}</i>`).join('')}</td>`;
+  const tog = split ? `<div class="seg mini" role="group" aria-label="Stand tonen">${[['alle','Alle'],['thuis','Thuis'],['uit','Uit']].map(([v,l]) => `<button type="button" data-standview="${v}" aria-pressed="${view===v}" class="${view===v?'on':''}">${l}</button>`).join('')}</div>` : '';
+  return `<div class="card stand"><div class="card-head" style="align-items:center;gap:10px;flex-wrap:wrap"><div class="kind">Stand</div>${tog}${app.owner && !editing ? `<button type="button" class="link-btn" data-standedit="${esc(rec.key)}">Stand bijwerken</button>` : ''}</div>
     ${editing ? `<p class="hint">Eén team per regel: team;gespeeld;punten;doelsaldo. Straks komt dit vanzelf uit Voetbal.nl (Sportlink).</p><textarea id="standtxt" rows="8" style="font-family:ui-monospace,Consolas,monospace;font-size:13px" placeholder="VFC O11-3;5;13;+12">${esc(txt)}</textarea>
       <div class="btns"><button type="button" class="primary" data-standsave="${esc(uidv)}|${esc(rec.key)}">Opslaan</button><button type="button" class="ghost" data-standcancel="1">Annuleren</button></div>`
-    : rows.length ? `<div class="tablewrap"><table><thead><tr><th class="nc">#</th><th>Team</th><th class="nc">G</th><th class="nc">Pnt</th><th class="nc">DS</th></tr></thead><tbody>${rows.map((r,k) => `<tr class="${/^VFC\b/i.test(r.team) && r.team.replace(/\s+/g,'').toUpperCase().includes(rec.team.replace(/^VFC\s*/i,'').replace(/\s+/g,'').toUpperCase()) ? 'me' : ''}"><td class="nc">${k+1}</td><td>${esc(r.team)}</td><td class="nc">${r.g}</td><td class="nc"><b>${r.p}</b></td><td class="nc">${r.ds > 0 ? '+' : ''}${r.ds}</td></tr>`).join('')}</tbody></table></div>`
+    : rows.length ? `<div class="tablewrap"><table><thead><tr><th class="nc">#</th><th>Team</th><th class="nc">G</th><th class="nc">Pnt</th><th class="nc">DS</th>${hasForm ? '<th class="sform">Laatste 5</th>' : ''}</tr></thead><tbody>${rows.map((r,k) => `<tr class="${isMe(r) ? 'me ' : ''}${zone(k)}"><td class="nc">${k+1}</td><td>${esc(r.team)}</td><td class="nc">${r.g}</td><td class="nc"><b>${r.p}</b></td><td class="nc">${r.ds > 0 ? '+' : ''}${r.ds}</td>${hasForm ? fcell(r.form) : ''}</tr>`).join('')}</tbody></table></div>
+      ${view === 'alle' && n >= 4 ? '<p class="zlegend"><span class="zt"></span>Kampioen <span class="zb"></span>Degradatiezone</p>' : ''}`
     : '<p class="hint">De stand komt straks vanzelf uit Voetbal.nl (Sportlink). Vanaf O11 publiceert de KNVB standen en uitslagen.</p>'}</div>`;
 }
+document.addEventListener('click', e => { const b = e.target.closest('[data-standview]'); if(!b) return; app.standView = b.dataset.standview; softRender(); });
 document.addEventListener('click', async e => {
   const b = e.target.closest('button'); if(!b || dlg.contains(b)) return; const x = b.dataset;
   if(x.mcard){ app.open.mcard = app.open.mcard === x.mcard ? null : x.mcard; app.open.attn = false; app.open.wsm = null; app.mDraft = null; render(); }
@@ -2677,8 +2693,12 @@ document.addEventListener('click', async e => {
   if(!cat || cat.stand){
     const mine = out.filter(m => m.testRes), w = mine.filter(m => m.gf > m.ga).length, dr = mine.filter(m => m.gf === m.ga).length, ds = mine.reduce((n, m) => n + m.gf - m.ga, 0);
     const others = ['Zwaluwen','VDL','Spartaan\'20','Hekelingen','CWO','Maassluis','DSO','Vlaardingia','Excelsior M.'].map(n => n + ' ' + short);
-    const rows = [{team:rec.team, g:mine.length, p:3 * w + dr, ds}];
-    others.forEach((n, j) => rows.push({team:n, g:5, p:[13,11,10,9,7,6,4,3,1].at(j), ds:[9,6,4,2,0,-1,-4,-6,-10].at(j)}));
+    const myForm = mine.map(m => m.gf > m.ga ? 'W' : m.gf === m.ga ? 'G' : 'V').join('');
+    const sub = (ms2, f) => { const w2 = ms2.filter(m => m.gf > m.ga).length, d2 = ms2.filter(m => m.gf === m.ga).length; return {g:ms2.length, p:3 * w2 + d2, ds:ms2.reduce((x, m) => x + m.gf - m.ga, 0), form:f}; };
+    const rows = [{team:rec.team, g:mine.length, p:3 * w + dr, ds, form:myForm, home:sub(mine.filter(m => m.home), mine.filter(m => m.home).map(m => m.gf > m.ga ? 'W' : m.gf === m.ga ? 'G' : 'V').join('')), away:sub(mine.filter(m => !m.home), mine.filter(m => !m.home).map(m => m.gf > m.ga ? 'W' : m.gf === m.ga ? 'G' : 'V').join(''))}];
+    const forms = ['WWGWW','WGWWV','WWVGW','GWWVW','WVGWV','VGWVW','VVWGV','GVVWV','VVGVV'];
+    others.forEach((n, j) => { const p2 = [13,11,10,9,7,6,4,3,1].at(j), d2 = [9,6,4,2,0,-1,-4,-6,-10].at(j), hp = Math.ceil(p2 * 0.6), hd = Math.round(d2 * 0.6);
+      rows.push({team:n, g:5, p:p2, ds:d2, form:forms.at(j), home:{g:3, p:Math.min(hp, 9), ds:hd, form:forms.at(j).slice(0, 3)}, away:{g:2, p:p2 - Math.min(hp, 9), ds:d2 - hd, form:forms.at(j).slice(3)}}); });
     patch.stand = rows;
   }
   try{ await saveDash(u, k, patch); app.note = {kind:'ok', text:`Vijf gespeelde testwedstrijden met uitslag en doelpuntenmakers toegevoegd${patch.stand ? ', plus een stand' : ''}. Kijk op het dashboard van ${rec.team}.`}; }catch(err){ app.note = {kind:'warn', text:'Toevoegen is niet gelukt.'}; }
