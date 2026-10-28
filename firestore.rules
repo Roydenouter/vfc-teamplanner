@@ -2,16 +2,43 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     function signedIn() { return request.auth != null; }
+    function myMail() { return request.auth.token.email; }
     function isAdmin() {
       return signedIn() && request.auth.token.email_verified == true
         && request.auth.token.email in ['roydenouter@gmail.com'];
     }
     function isSelf(uid) { return signedIn() && request.auth.uid == uid; }
+    function gedeeld(key) { return get(/databases/$(database)/documents/gedeeld/$(key)).data; }
+    function isLid(uid, key) {
+      return signedIn() && exists(/databases/$(database)/documents/gedeeld/$(key))
+        && gedeeld(key).ownerUid == uid && myMail() in gedeeld(key).leden;
+    }
+    function isBewerker(uid, key) {
+      return signedIn() && exists(/databases/$(database)/documents/gedeeld/$(key))
+        && gedeeld(key).ownerUid == uid && myMail() in gedeeld(key).bewerkers;
+    }
     match /aanvragen/{uid} {
       allow read, write: if isAdmin() || isSelf(uid);
-      match /{rest=**} {
-        allow read, write: if isAdmin() || isSelf(uid);
+      match /dash/{key} {
+        allow read: if isAdmin() || isSelf(uid) || isLid(uid, key);
+        allow write: if isAdmin() || isSelf(uid) || isBewerker(uid, key);
       }
+      match /{rest=**} { allow read, write: if isAdmin() || isSelf(uid); }
+    }
+    match /gedeeld/{key} {
+      allow read: if isAdmin() || (signedIn() && (resource.data.ownerUid == request.auth.uid || myMail() in resource.data.leden));
+      allow create: if isAdmin() || (signedIn() && request.resource.data.ownerUid == request.auth.uid);
+      allow update: if isAdmin() || (signedIn() && resource.data.ownerUid == request.auth.uid && request.resource.data.ownerUid == request.auth.uid);
+      allow delete: if isAdmin() || (signedIn() && resource.data.ownerUid == request.auth.uid);
+    }
+    match /uitnodigingen/{id} {
+      allow read: if isAdmin() || (signedIn() && (resource.data.ownerUid == request.auth.uid || resource.data.email == myMail()));
+      allow create: if isAdmin() || (signedIn() && request.resource.data.ownerUid == request.auth.uid);
+      allow update: if isAdmin()
+        || (signedIn() && resource.data.ownerUid == request.auth.uid && request.resource.data.ownerUid == request.auth.uid)
+        || (signedIn() && resource.data.email == myMail()
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'uid', 'answeredAt']));
+      allow delete: if isAdmin() || (signedIn() && resource.data.ownerUid == request.auth.uid);
     }
     match /voorbereid/{id} {
       allow read: if isAdmin() || (signedIn() && request.auth.token.email in resource.data.emails);
