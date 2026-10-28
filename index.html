@@ -1394,7 +1394,7 @@ function adminAanvragen(){
       : '<div class="empty">Nog geen aanvragen binnen. Zodra een team een aanmelding verstuurt, verschijnt die hier.</div>'}
     </section>
     ${sel ? `<section class="panel"><div class="card-head"><div class="panel-head"><div class="kind">Aanvraag</div><h2>${esc(sel.rec.team)}</h2><p class="hint">Verstuurd ${fmtTime(sel.rec.updatedAt)}${sel.rec.submittedAt!==sel.rec.updatedAt?` · eerste keer ${fmtTime(sel.rec.submittedAt)}`:''}</p></div>${statusPill(sel.rec.status)}</div>
-      <div class="btns"><button type="button" class="ghost" data-testmatch="${esc(sel.uid + '/' + sel.rec.key)}" title="Voor testen, zolang Voetbal.nl (Sportlink) nog niet gekoppeld is">Testwedstrijden toevoegen</button><button type="button" class="primary" data-activate="${esc(sel.uid + '/' + sel.rec.key)}" ${app.busy?'disabled':''}>${app.teams[sel.rec.key] ? 'Spelers opnieuw synchroniseren' : 'Team activeren'}</button><span class="hint">${app.teams[sel.rec.key] ? 'Neemt wijzigingen in de spelerslijst over in het register. Tellers blijven staan.' : 'Zet de status op Actief en zet de spelers in het register.'}</span></div>
+      <div class="btns"><button type="button" class="ghost" data-testres="${esc(sel.uid + '/' + sel.rec.key)}" title="Voor testen: gespeelde wedstrijden met uitslag, doelpuntenmakers en een stand">Testuitslagen en stand</button><button type="button" class="ghost" data-testmatch="${esc(sel.uid + '/' + sel.rec.key)}" title="Voor testen, zolang Voetbal.nl (Sportlink) nog niet gekoppeld is">Testwedstrijden toevoegen</button><button type="button" class="primary" data-activate="${esc(sel.uid + '/' + sel.rec.key)}" ${app.busy?'disabled':''}>${app.teams[sel.rec.key] ? 'Spelers opnieuw synchroniseren' : 'Team activeren'}</button><span class="hint">${app.teams[sel.rec.key] ? 'Neemt wijzigingen in de spelerslijst over in het register. Tellers blijven staan.' : 'Zet de status op Actief en zet de spelers in het register.'}</span></div>
       ${app.delAsk === sel.uid + '/' + sel.rec.key ? `<div class="prep-banner del-ask"><div><b>${esc(sel.rec.team)} van ${esc((sel.rec.staff[0] || {}).name || 'de trainer')} verwijderen?</b><p>Het team, de wedstrijden, het wisselschema, de taken en de uitnodigingen verdwijnen. Dit kun je niet terugdraaien.</p></div><div class="btns"><button type="button" class="primary danger" data-teamdelok="${esc(sel.uid + '/' + sel.rec.key)}" ${app.busy?'disabled':''}>Ja, verwijderen</button><button type="button" class="link-btn" data-teamdelno="1">Annuleren</button></div></div>` : `<div class="btns"><button type="button" class="link-btn danger" data-teamdel="${esc(sel.uid + '/' + sel.rec.key)}">Team verwijderen</button></div>`}
       ${reviewHTML(sel.rec, 'adm-' + sel.rec.key + '-')}
       <details class="flow"><summary>Samenvatting als tekst</summary><div class="group"><pre class="sum" id="admSum">${esc(summaryText(sel.rec))}</pre><div class="btns"><button type="button" class="ghost" data-copy="admSum">Kopieer samenvatting</button><span class="status" id="copyStatus" role="status"></span></div></div></details></section>` : ''}`;
@@ -2652,6 +2652,32 @@ document.addEventListener('click', async e => {
   for(let i = 0; i < 6; i++){ const d = new Date(sat); d.setDate(sat.getDate() + 7 * i); const iso = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
     if(out.some(m => m.date === iso)) continue; out.push({id:'t' + Date.now().toString(36) + i, date:iso, time:['10:00','11:30','12:45','14:30','10:30','13:00'].at(i), opp:opp.at(i) + ' ' + ((recByKey(k) || {}).team || '').replace(/^VFC\s*/, '').replace(/-\d+.*/, '-1'), home:i % 2 === 0, gf:null, ga:null, scorers:{}, att:{}, test:true}); }
   try{ await saveDash(u, k, {matches:out}); app.note = {kind:'ok', text:'Zes testwedstrijden toegevoegd, de komende zaterdagen. Ze staan nu op het dashboard van dit team.'}; }catch(err){ app.note = {kind:'warn', text:'Toevoegen is niet gelukt.'}; }
+  render();
+});
+/* testuitslagen: vijf gespeelde zaterdagen met uitslag en doelpuntenmakers, plus een stand (vanaf O11) */
+document.addEventListener('click', async e => {
+  const b = e.target.closest('button'); if(!b || !b.dataset.testres) return;
+  const [u, k] = b.dataset.testres.split('/'), dash = app.dash[k] || {}, rec = recByKey(k); if(!rec) return;
+  const short = rec.team.replace(/^VFC\s*/, '').replace(/-\d+.*/, '-1'), rnd = seeded(k + 'uitslag'), ps = plist(rec);
+  const opp = ['Zwaluwen','VDL','Spartaan\'20','Hekelingen','CWO'], score = [[3,1],[1,1],[2,4],[5,0],[2,1]];
+  const today = new Date(), sat = new Date(today); sat.setDate(today.getDate() - ((today.getDay() + 1) % 7 || 7));
+  const out = (dash.matches || []).filter(m => !m.testRes);
+  for(let i = 0; i < 5; i++){
+    const d = new Date(sat); d.setDate(sat.getDate() - 7 * (4 - i)); const iso = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    if(out.some(m => m.date === iso)) continue;
+    const [gf, ga] = score.at(i), scorers = {};
+    for(let g = 0; g < gf && ps.length; g++){ const p = ps.at(Math.floor(rnd() * Math.min(ps.length, 8))); scorers[p.id] = (scorers[p.id] || 0) + 1; }
+    out.push({id:'r' + Date.now().toString(36) + i, date:iso, time:['10:00','12:30','11:00','14:30','10:30'].at(i), opp:opp.at(i) + ' ' + short, home:i % 2 === 0, gf, ga, scorers, test:true, testRes:true});
+  }
+  const patch = {matches:out}, cat = teamCat(rec.team);
+  if(!cat || cat.stand){
+    const mine = out.filter(m => m.testRes), w = mine.filter(m => m.gf > m.ga).length, dr = mine.filter(m => m.gf === m.ga).length, ds = mine.reduce((n, m) => n + m.gf - m.ga, 0);
+    const others = ['Zwaluwen','VDL','Spartaan\'20','Hekelingen','CWO','Maassluis','DSO','Vlaardingia','Excelsior M.'].map(n => n + ' ' + short);
+    const rows = [{team:rec.team, g:mine.length, p:3 * w + dr, ds}];
+    others.forEach((n, j) => rows.push({team:n, g:5, p:[13,11,10,9,7,6,4,3,1].at(j), ds:[9,6,4,2,0,-1,-4,-6,-10].at(j)}));
+    patch.stand = rows;
+  }
+  try{ await saveDash(u, k, patch); app.note = {kind:'ok', text:`Vijf gespeelde testwedstrijden met uitslag en doelpuntenmakers toegevoegd${patch.stand ? ', plus een stand' : ''}. Kijk op het dashboard van ${rec.team}.`}; }catch(err){ app.note = {kind:'warn', text:'Toevoegen is niet gelukt.'}; }
   render();
 });
 /* ================= ronde 13: staf uitnodigen, gedeelde teams, team verwijderen ================= */
