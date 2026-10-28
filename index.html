@@ -811,7 +811,11 @@ const staffLabel = s => `${s.role} ${s.name}`;
 const staffById = (d, id) => slist(d).find(s => s.id === id);
 const attList = d => (d.att && d.att.to && d.att.to.length) ? d.att.to : (slist(d)[0] ? [slist(d)[0].id] : []);
 const cnames = p => (p.contacts||[]).map(c => c.name.trim()).filter(Boolean).join(', ');
-const activeExtras = d => EXTRA.filter(i => d.on[i.id]);
+/* Siroop alleen voor de kleine velden: vanaf O13 spelen ze 11 tegen 11 en gaan ze in de rust naar de kleedkamer (thee van de club). Navragen bij VFC. */
+const SIROOP_TOT = 12;
+const offered = d => EXTRA.filter(i => !(i.id === 'siroop' && ageOf(d.team) > SIROOP_TOT));
+const ageOf = t => { const m = /\b(?:JO|MO|O)(\d+)/i.exec(t || ''); return m ? +m[1] : 0; };
+const activeExtras = d => offered(d).filter(i => d.on[i.id]);
 const getVal = (d,i,f) => { const v = d.val[i.id]; return (v && v[f.id] != null) ? v[f.id] : ''; };
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 const badMail = e => !!e && !EMAIL.test(e.trim());
@@ -973,8 +977,9 @@ function automationHTML(d){
   if(on('oefenstof')) ev.push({day:1, ic:'oefenstof', text:'Oefenstof van de week bij de trainingen in de agenda', who:'auto', sort:'01'});
   if(on('spelbegeleider')) ev.push({day:3, ic:'spelbegeleider', text:'Herinnering spelbegeleider (thuiswedstrijd)', who:'auto', sort:'02'});
   const attTo = attList(d).map(id => staffById(d, id)).filter(Boolean).map(staffLabel);
-  ev.push({day:4, ic:'mail', time:'18:00', text:'Alle ouders/verzorgers krijgen de wedstrijdinformatie: aftrap, verzamelen, veld en kleedkamer, bij uit het adres met een link voor de route. Met de vraag of hun kind er is.', who:'auto', sort:'18:00'});
-  ev.push({day:5, ic:'bell', time:'18:00', text:'Herinnering aan ouders die nog niets hebben laten weten', who:'auto', sort:'18:00a'});
+  const mt = msgToOf(d), wieAlle = mt === 'speler' ? 'Alle spelers' : mt === 'beide' ? 'Alle spelers en hun ouders/verzorgers' : 'Alle ouders/verzorgers';
+  ev.push({day:4, ic:'mail', time:'18:00', text:`${wieAlle} krijgen de wedstrijdinformatie: aftrap, verzamelen, veld en kleedkamer, bij uit het adres met een link voor de route. Met de vraag of ${mt === 'ouders' ? 'hun kind er is' : mt === 'speler' ? 'ze er zijn' : 'de speler er is'}.`, who:'auto', sort:'18:00'});
+  ev.push({day:5, ic:'bell', time:'18:00', text:`Herinnering aan ${mt === 'speler' ? 'spelers' : mt === 'beide' ? 'spelers en ouders' : 'ouders'} die nog niets hebben laten weten`, who:'auto', sort:'18:00a'});
   ev.push({day:5, ic:'people', time:'21:30', text:recvText(d), who:'auto', sort:'21:30'});
   if(on('shirts')) ev.push({day:5, ic:'shirts', text:'Herinnering: de schone shirts mee naar de wedstrijd', who:'auto', sort:'03'});
   if(on('ballen')) ev.push({day:5, ic:'ballen', text:'Herinnering wedstrijdballen', who:'auto', sort:'04'});
@@ -985,14 +990,14 @@ function automationHTML(d){
   ev.push({day:MATCH, ic:'clock', time:'bijv. aftrap 10:00', text:`Verzamelen ${fromMin(k - (+d.gather.home||0))} thuis, ${fromMin(k - (+d.gather.away||0))} uit${d.gather.place?' ('+d.gather.place+')':''}; de agenda rekent dit per wedstrijd uit`, who:'auto', sort:'08'});
   ev.push({day:MATCH, ic:'pitch', text:'Wedstrijd', who:'ouder', sort:'09'});
   ev.push({day:MATCH, ic:'alert', text:`Plotse wijziging? ${late ? (late === slist(d)[0] && !window.tpUserEmail || (window.tpUserEmail && (late.email||'').toLowerCase() === window.tpUserEmail.toLowerCase()) ? 'Jij zet' : staffLabel(late) + ' zet') : 'De afgesproken persoon zet'} die in de agenda; de mail gaat vanzelf`, who:'team', sort:'10'});
-  const evHTML = e => `<div class="ev ${e.who}">${e.ic ? `<span class="ev-ic">${icon(e.ic)}</span>` : ''}<span class="ev-t">${e.time?`<b>${esc(e.time)}</b>`:''}${esc(e.text)}</span></div>`;
+  const evHTML = e => `<div class="ev ${e.who}">${e.ic ? `<span class="ev-ic">${icon(e.ic)}</span>` : ''}<span class="ev-t">${e.time?`<b>${esc(e.time)}</b> `:''}${esc(e.text)}</span></div>`;
   const rows = WEEK.map(v => {
     const items = ev.filter(e => e.day === v).sort((a,b) => String(a.sort).localeCompare(String(b.sort)));
     return `<div class="wrow${v===MATCH?' match':''}"><div class="wday"><b>${DFULL[v]}</b>${v===MATCH?'<small>speeldag</small>':''}</div><div class="witems">${items.length ? items.map(evHTML).join('') : '<span class="wnone">–</span>'}</div></div>`;
   }).join('');
   const always = [
     ['auto','Wijziging of afgelasting in Voetbal.nl (Sportlink): de agenda past zich aan en iedereen krijgt een mail.', 'sync'],
-    ['club','Mededeling van de club: komt per mail bij alle ouders/verzorgers.', 'mail']
+    ['club',`Mededeling van de club: komt per mail bij ${wieAlle.toLowerCase()}.`, 'mail']
   ];
   if(on('bardienst')){ const n = d.cfg.bardienst.dates.filter(Boolean).length; always.push(['auto', `Bardienst: herinnering een week voor elke dienst (${n} ${n===1?'dienst':'diensten'}).`, 'bardienst']); }
   if(['begeleiding','shirts','ballen','siroop','rijden','spelbegeleider'].some(on)) always.push(['ouder','Kan iemand niet? Onderling ruilen en doorgeven; de agenda en de herinnering gaan mee met de nieuwe naam.', 'wissel']);
@@ -1138,7 +1143,7 @@ function stepBasis(d){
 function stepExtras(d){
   const ex = activeExtras(d);
   return `<div class="panel-head"><h2>Extra’s</h2><p class="hint">Vink aan wat bij jullie team past. Bij een onderdeel met instellingen opent een venster; daarna zie je hieronder het rooster.</p></div>
-    <div class="tiles">${EXTRA.map(i => `<label class="tile"><input type="checkbox" id="opt-${i.id}" data-opt="${i.id}" ${d.on[i.id]?'checked':''}><b>${esc(i.title)}</b><small>${esc(i.short)}</small>${d.on[i.id] && extraDone(d, i) ? '<span class="set">Ingesteld</span>' : ''}</label>`).join('')}</div>
+    <div class="tiles">${offered(d).map(i => `<label class="tile"><input type="checkbox" id="opt-${i.id}" data-opt="${i.id}" ${d.on[i.id]?'checked':''}><b>${esc(i.title)}</b><small>${esc(i.short)}</small>${d.on[i.id] && extraDone(d, i) ? '<span class="set">Ingesteld</span>' : ''}</label>`).join('')}</div>
     ${ex.length ? `<div class="stack">${ex.map(i => (extraDone(d, i) && !app.open['x-' + i.id]) ? extraCompact(d, i) : extraCardHTML(d, i, true, 'form-').replace('<div class="card-head">', `<div class="card-head">`) + (app.open['x-' + i.id] ? `<div><button type="button" class="link-btn" data-expand="${i.id}">Rooster inklappen</button></div>` : '')).join('')}</div>` : '<div class="empty">Nog niets gekozen. Geen extra’s nodig? Dan kun je door naar Controleren.</div>'}`;
 }
 function stepReview(d){
