@@ -1618,7 +1618,7 @@ function viewDash(){
         <h2 class="hteam">${esc(rec.team)}</h2>
         <p class="hint hstaff" style="margin:0">${staff.map(esc).join('<br>')}</p>
         <div class="hrec"><b class="hi">${st.w}</b><span>W</span><b>${st.g}</b><span>G</span><b>${st.v}</b><span>V</span></div>
-        <div class="form-row"><span class="label">Vorm</span>${st.form.length ? st.form.map(dot).join('') : '<span class="hint">nog geen uitslagen</span>'}</div>
+        <div class="form-row" style="min-height:22px">${st.form.length ? `<span class="label">Vorm</span>${st.form.map(dot).join('')}` : ''}</div>
       </div>
       <div class="hmatches">${upcoming.length ? upcoming.slice(0, 3).map((m, k) => mcard(m, k === 0)).join('') : '<p class="hint">Nog geen wedstrijden bekend. Ze komen straks vanzelf uit Voetbal.nl (Sportlink).</p>'}</div>
     </section>
