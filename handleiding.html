@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="nl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Handleiding VFC Teamplanner</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Source+Sans+3:wght@400;600;700&display=swap">
+<style>
+:root{--bg:#14140f;--surface:#1d1c16;--ink:#f1eee4;--muted:#b3ad9c;--line:#38362c;--pitch:#d9b44a;--soft:rgba(217,180,74,.12)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.6 'Source Sans 3',system-ui,sans-serif}
+header{padding:28px 16px 8px;max-width:760px;margin:0 auto}
+header h1{font-family:'Barlow Condensed',sans-serif;font-size:34px;line-height:1.05;margin:0;color:var(--pitch);text-transform:uppercase;letter-spacing:.02em}
+header p{margin:6px 0 0;color:var(--muted);font-size:15px}
+nav{position:sticky;top:0;z-index:5;background:var(--bg);border-bottom:1px solid var(--line)}
+nav .in{max-width:760px;margin:0 auto;padding:10px 16px;display:flex;gap:8px;overflow-x:auto;scrollbar-width:none}
+nav a{flex:none;color:var(--muted);text-decoration:none;border:1px solid var(--line);border-radius:999px;padding:6px 14px;font-weight:600;font-size:15px;white-space:nowrap}
+nav a.on{background:var(--pitch);border-color:var(--pitch);color:#14140f}
+main{max-width:760px;margin:0 auto;padding:8px 16px 60px}
+.sec{display:none}.sec.on{display:block}
+h1,h2,h3{font-family:'Barlow Condensed',sans-serif;line-height:1.15}
+.sec h1{font-size:30px;margin:18px 0 8px}
+h2{font-size:26px;margin:32px 0 8px;color:var(--pitch)}
+h3{font-size:21px;margin:24px 0 6px}
+a{color:var(--pitch)}
+blockquote{margin:16px 0;padding:12px 16px;border-left:4px solid var(--pitch);background:var(--soft);border-radius:0 10px 10px 0}
+blockquote p{margin:0}
+table{width:100%;border-collapse:collapse;font-size:15px;margin:12px 0;display:block;overflow-x:auto}
+th,td{text-align:left;vertical-align:top;padding:8px 10px;border-bottom:1px solid var(--line)}
+th{color:var(--muted);font-weight:700;font-size:13px;text-transform:uppercase;letter-spacing:.04em}
+.shot{display:block;width:100%;max-width:320px;border:1px solid var(--line);border-radius:10px;margin:12px 0}
+li{margin:4px 0}
+.next{margin-top:36px}
+</style></head><body>
+<header><h1>Handleiding VFC Teamplanner</h1><p>Voor trainers · bijgewerkt 28 oktober 2026</p></header>
+<nav><div class="in"><a href="#module-1" data-sec="module-1">1. Start en opvoeren</a><a href="#module-2" data-sec="module-2">2. Teamdashboard</a><a href="#module-3" data-sec="module-3">3. Wisselschema</a><a href="#module-4" data-sec="module-4">4. Opstelling</a><a href="#module-5" data-sec="module-5">5. Team Taken</a><a href="#module-6" data-sec="module-6">6. Wijzigingen</a></div></nav>
+<main><section id="module-1" class="sec"><p>@Eric, allereerst, bedankt dat je de moeite neemt om de VFC Teamplanner uit te proberen! 😊</p>
+<p>Met de VFC Teamplanner zet je je team één keer goed neer. Daarna lopen agenda, herinneringen en taakroosters vanzelf en hoef je niets meer door te sturen. De club heeft je spelers en staf al klaargezet; jij vult alleen de contactgegevens en de taken aan.</p>
+<p>Deze handleiding bestaat uit losse modules. Dit is module 1. Onderaan klik je door naar module 2 en de andere modules. Eric (O9-4) is de eerste trainer die het gaat gebruiken; zijn ervaringen verwerken we hierin.</p>
+<h2>Voor je begint: verzamel de gegevens</h2>
+<p>Het invullen gaat het snelst als je de mailadressen al hebt. Vraag ze alvast op in de teamapp of bij de eerste training. Zonder mailadres kan een speler wel in het team, maar krijgt die geen agenda en herinneringen.</p>
+<blockquote>
+<p><strong>@Eric, voor deze test:</strong> gebruik geen echte mailadressen. Vul per speler een nepadres in, bijvoorbeeld Ouder1@mail.nl, Ouder2@mail.nl, enzovoort. Maak bij minstens één speler ook een tweede ouder aan met <strong>+ Contactpersoon</strong>, zodat we zien hoe dat werkt. Er wordt nog niets verstuurd.</p>
+</blockquote>
+<p>Wie je nodig hebt, hangt af van de leeftijd. Dit staat in de app al goed ingesteld; je kunt het per team aanpassen.</p>
+<table>
+<thead>
+<tr>
+<th>Leeftijd</th>
+<th>Berichten gaan naar</th>
+<th>Wat je verzamelt</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>O7 t/m O12</td>
+<td>Ouders of verzorgers</td>
+<td>Mailadres van minstens één ouder per speler</td>
+</tr>
+<tr>
+<td>O13 t/m O15</td>
+<td>Ouders én speler</td>
+<td>Mailadres ouder en, als die er is, van de speler</td>
+</tr>
+<tr>
+<td>O16 en ouder</td>
+<td>Speler zelf</td>
+<td>Mailadres en mobiel nummer van de speler</td>
+</tr>
+</tbody>
+</table>
+<p>Een speler kan meerdere contactpersonen hebben, bijvoorbeeld twee ouders die allebei de agenda willen. Taken staan op naam van de speler; wie thuis de taak doet, regelen ze zelf.</p>
+<p>Open punt: telefoonnummers van ouders kun je nog niet invullen, alleen het mobiele nummer van de speler. Dat komt erbij zodra we de WhatsApp-variant uitwerken.</p>
+<h2>Module 1: Je team opvoeren</h2>
+<p>Je logt in, je ziet je klaargezette team en je loopt vijf stappen door. Reken op een kwartier als je de mailadressen bij de hand hebt. Tussendoor stoppen mag: wat je invult wordt vanzelf bewaard.</p>
+<h3>Inloggen</h3>
+<ol>
+<li>Ga naar <a href="https://roydenouter.github.io/vfc-teamplanner/">roydenouter.github.io/vfc-teamplanner</a>.</li>
+<li>Klik op <strong>Inloggen met Google</strong> en kies het mailadres dat je aan de club hebt doorgegeven.</li>
+<li>Geen Google-adres? Vul je mailadres in bij <strong>Stuur inloglink</strong> en klik op de link in de mail. (Kijk ook bij spam.)</li>
+</ol>
+<p>Dit webadres is tijdelijk. Voor de echte start komt er een nette VFC-link; die laten we je dan weten.</p>
+<p>Log in met precies het adres dat de club van je heeft. Daaraan herkent de app jouw teams.</p>
+<p><strong>Op je telefoon?</strong> Dat kan prima. Opent de link binnen WhatsApp en geeft Google een foutmelding, kies dan <strong>Openen in browser</strong> (Safari of Chrome) en probeer het daar opnieuw.</p>
+<h3>Een vreemd adres in het Google-scherm of de mail? Dat klopt</h3>
+<p>In het Google-venster staat <strong>Doorgaan naar gen-lang-client-0434299367.firebaseapp.com</strong>, en de inlogmail komt van een afzender met diezelfde naam. Dat ziet er vreemd uit, maar het klopt.</p>
+<p><img class="shot" src="google-scherm.png" alt="Het Google-scherm bij inloggen"></p>
+<ul>
+<li><strong>Wat is dat adres?</strong> De technische naam van Firebase, de dienst van Google waar de Teamplanner op draait. Tijdelijk: later staat er een herkenbare VFC-naam.</li>
+<li><strong>Je wachtwoord blijft bij Google.</strong> De Teamplanner krijgt het nooit te zien.</li>
+<li><strong>De Teamplanner krijgt alleen je naam en mailadres</strong>, en gebruikt die alleen voor de teamagenda van VFC. Geen toegang tot je mail, agenda of bestanden.</li>
+</ul>
+<p>Eerlijk is eerlijk: dit is nog een ruwe proefopzet. Het werkt en je gegevens zijn veilig, maar het oogt op deze punten nog niet gelikt. Dat poetsen we op voordat andere teams instappen. Liever niet via Google? De inloglink per mail werkt net zo goed.</p>
+<h3>Wat je daarna ziet</h3>
+<p>Bovenaan staat een gele balk: <strong>Je team staat klaar</strong>, met de teams die de club aan jou heeft gekoppeld. Het eerste team staat al open in <strong>Team opvoeren</strong>, met de spelers en de staf uit de teamindeling. Heb je meer teams, dan vul je ze na elkaar in: na het versturen van het ene team klik je bij het volgende op <strong>Invullen</strong>.</p>
+<h3>Stap 1: Team</h3>
+<p>Hier staat de basis van je team. De teamnaam is al ingevuld. Bij <strong>Jij</strong> vul je je voornaam en telefoonnummer aan; je mailadres staat er al. Jij bent het aanspreekpunt voor de club. Bij <strong>Andere trainers en leiders</strong> staan je collega's uit de teamindeling; hun mailadres invullen kan, maar hoeft niet (zie hieronder).</p>
+<p>Waarom: de club weet zo wie ze moet bellen, en jij kiest later wie de weekoverzichten krijgt.</p>
+<p><strong>Selma en Dave meenemen?</strong> Dat mag, maar het hoeft niet. Vul je hun echte mailadres in, dan kies je erachter wat ze mogen: <strong>Alleen kijken</strong> of <strong>Kijken en aanpassen</strong> (uitslagen, wisselschema en opstelling). Na het versturen staat er voor hen een uitnodiging klaar. Ze krijgen daar geen mail van: laat ze weten dat ze kunnen inloggen op hetzelfde adres. Na hun akkoord zien ze het teamdashboard. Spelers en taken aanpassen blijft bij jou. Laat je hun mailadres leeg, dan gebeurt er niets en kun je ze later nog toevoegen via Beheer.</p>
+<h3>Stap 2: Spelers</h3>
+<p>De spelers staan er al in. Per speler vul je de contactpersoon en het mailadres in, en bij oudere teams het mailadres en mobiele nummer van de speler zelf. Vanaf O13 kun je ook rugnummer en positie invullen; die gebruik je later voor de opstelling. Bovenaan staat naar wie de berichten gaan (ouders, beide of speler); dat staat al goed voor jouw leeftijdsgroep.</p>
+<p>Waarom: met een mailadres krijgen ouders of spelers de agenda, de herinneringen en hun taken. Speelt een speler niet meer in je team, zet hem dan op <strong>Niet meer in het team</strong> in plaats van hem te verwijderen. Zijn geschiedenis blijft dan bewaard: stapt hij over naar een ander VFC-team, dan neemt hij zijn tellers mee. En de beurten die hij al deed, blijven in het takenoverzicht staan, zodat daar geen gaten vallen.</p>
+<h3>Stap 3: Basis</h3>
+<p>Dit krijgt elk team: wedstrijdprogramma, wijzigingen en afgelastingen, trainingen, clubmededelingen en aanwezig of afwezig. Bij <strong>Trainingen</strong> vul je jullie dagen en tijden in, standaard twee keer per week. De rest komt van de club en straks vanzelf uit Voetbal.nl.</p>
+<p>Waarom: hieruit maakt de app de agenda die ouders en spelers in hun telefoon krijgen.</p>
+<h3>Stap 4: Extra's</h3>
+<p>Vink aan welke taken jullie team verdeelt: begeleiden training, shirts wassen, wedstrijdballen, rijden naar uitwedstrijden, spelbegeleider, siroopkannen, bardienst of oefenstof per week. Bij een taak met instellingen opent een venster, bijvoorbeeld voor dagen of uitzonderingen. Daaronder zie je meteen het rooster.</p>
+<p>Waarom: de app verdeelt de beurten eerlijk over alle spelers over het hele seizoen, rekening houdend met vakanties en vrije dagen. Je hoeft zelf geen schema meer te maken.</p>
+<h3>Stap 5: Controleren</h3>
+<p>Je ziet alles nog een keer op een rij. Klopt het, klik dan op <strong>Team versturen</strong>. De club zet je team daarna aan; vanaf dat moment zie je het <strong>Teamdashboard</strong> en kun je wijzigingen doorgeven via <strong>Beheer</strong>.</p>
+<h2>Na het versturen</h2>
+<p>Op het <strong>Teamdashboard</strong> zie je uitslagen, stand (vanaf O11), programma en topscorers, de tab <strong>Team Taken</strong> met het rooster en de tab <strong>Wisselschema</strong>. Vanaf O13 staat er ook een veldje met de opstelling. Bij <strong>Beheer</strong> geef je wijzigingen door, zoals een nieuwe speler of iemand die stopt.</p>
+<p>De andere modules lees je pas als je ze nodig hebt. Tik op een module om hem te openen.</p>
+<ul>
+<li><a href="#module-2">2. Teamdashboard</a>: wat je ziet en hoe je een uitslag invult</li>
+<li><a href="#module-3">3. Wisselschema</a>: het schema per wedstrijd en de speelminuten</li>
+<li><a href="#module-4">4. Opstelling (vanaf O13)</a>: rugnummers, posities en het veldje (pas vanaf O13)</li>
+<li><a href="#module-5">5. Team Taken</a>: wie wanneer aan de beurt is</li>
+<li><a href="#module-6">6. Wijzigingen</a>: een speler erbij, eraf, naar een ander team of even niet</li>
+</ul>
+<h2>Vragen en feedback</h2>
+<p>Loop je ergens tegenaan of is iets onduidelijk? Geef aan waar je tegenaan loopt, dan komen we eruit. Stuur een bericht aan Roy.</p><p class="next"></p></section><section id="module-2" class="sec"><h1>Module 2: Het teamdashboard</h1>
+<p>Het dashboard is je startpunt na het inloggen. Bovenaan staat je team met de teamfoto, de staf, het aantal gewonnen, gelijke en verloren wedstrijden, en de vorm van de laatste wedstrijden. Rechts zie je de eerstvolgende wedstrijd.</p>
+<p>Daaronder kies je tussen drie tabs.</p>
+<ul>
+<li><strong>Voetbalzaken:</strong> uitslagen, stand (vanaf O11), topscorers en het programma. Bij de eerstvolgende wedstrijd zie je ook kleedkamer, veld en wie er komt.</li>
+<li><strong>Team Taken:</strong> wie deze en volgende week aan de beurt is (module 5).</li>
+<li><strong>Wisselschema:</strong> het schema per wedstrijd en de speelminuten (module 3).</li>
+</ul>
+<h2>Een uitslag invullen</h2>
+<p>Klik na de wedstrijd op de wedstrijd en vul de doelpunten in. Tik de doelpuntenmakers aan: met + tel je een doelpunt erbij, met − haal je er een af. De topscorers lopen dan vanzelf bij.</p>
+<h2>Wie komt er?</h2>
+<p>Bij de eerstvolgende wedstrijd tik je een speler aan: komt, afgemeld of weer open. Zolang de uitnodigingen nog niet automatisch lopen, houd je dit hier zelf bij.</p>
+<h2>Wedstrijden</h2>
+<p>De wedstrijden komen straks vanzelf uit Voetbal.nl. Tot die koppeling er is, zet de club een paar testwedstrijden klaar zodat je alles kunt uitproberen. Onderaan staan de KNVB-spelregels voor jouw leeftijd.</p><p class="next"><a href='#module-1'>← Terug naar het begin</a></p></section><section id="module-3" class="sec"><h1>Module 3: Wisselschema en speelminuten</h1>
+<p>Eric, ik weet dat jij de wissels zonder problemen regelt. Wil je het toch een keer proberen? Ik ben benieuwd of het je tijd scheelt, of het goed werkt, en of het iets toevoegt, bijvoorbeeld het overzicht van speelminuten over het seizoen.</p>
+<p>Het wisselschema verdeelt de speeltijd eerlijk over iedereen die er is. Ook de keepersbeurten worden verdeeld.</p>
+<h2>Voor de wedstrijd</h2>
+<ol>
+<li>Open de tab <strong>Wisselschema</strong> en kies de wedstrijd.</li>
+<li>Tik bij <strong>Wie zijn er?</strong> aan wie er komen. Doe dit bijvoorbeeld op vrijdag of vlak voor de aftrap.</li>
+<li>Kies <strong>Wissel elke</strong> 5, 10 of 15 minuten en wie er keept. De wedstrijdvorm (bij O9: 6 tegen 6, 2 × 20 minuten) staat al goed volgens de KNVB.</li>
+<li>Het schema verschijnt per blok: wie er in het veld staat, wie keept en wie wissel is.</li>
+</ol>
+<h2>Na de wedstrijd</h2>
+<p>Liep het anders dan gepland, bijvoorbeeld door een blessure? Klik dan op <strong>Minuten aanpassen</strong> en vul per speler in hoeveel minuten hij in het veld stond, keepte en wissel was.</p>
+<h2>Over het seizoen</h2>
+<p>Onder het schema zie je per speler de speelminuten en keepersminuten van het hele seizoen. Zo zie je in één oogopslag of iemand achterloopt. Met <strong>Exporteren (pdf)</strong> bewaar of deel je dat overzicht.</p>
+<p>Spelers die graag keepen, geef je daar een handschoen-icoon. Zo zie je meteen wie je kunt vragen als de keeper er niet is.</p><p class="next"><a href='#module-1'>← Terug naar het begin</a></p></section><section id="module-4" class="sec"><h1>Module 4: Opstelling en posities (vanaf O13)</h1>
+<p>Vanaf O13 staat op het dashboard een klein veld met de opstelling. Voor O9 heb je dit nog niet nodig; lees het later.</p>
+<h2>Rugnummers en posities</h2>
+<p>Zet bij <strong>Beheer → Bewerken → Spelers</strong> het schuifje <strong>Rugnummers en posities</strong> aan. Per speler vul je dan het rugnummer in en kies je in de keuzelijst een of meer posities, zoals CV (centrale verdediger) of SP (spits).</p>
+<h2>De opstelling maken</h2>
+<ol>
+<li>Kies de wedstrijd en het <strong>speltype</strong>, bijvoorbeeld 1-4-3-3 of 1-4-4-2.</li>
+<li>Tik een plek in het veld aan en kies een speler. In de cirkel staat zijn rugnummer.</li>
+<li>Of klik op <strong>Automatisch invullen</strong>: de app zet spelers op een plek die bij hun positie past.</li>
+</ol>
+<p>Wie niet in de basis staat, komt bij <strong>Wissels</strong>. Wie er niet is, zet je op <strong>Afwezig</strong>.</p><p class="next"><a href='#module-1'>← Terug naar het begin</a></p></section><section id="module-5" class="sec"><h1>Module 5: Team Taken</h1>
+<p>In de tab <strong>Team Taken</strong> zie je wie deze week en volgende week aan de beurt is: begeleiden, shirts wassen, wedstrijdballen, rijden en de andere taken die je bij Extra's hebt aangevinkt. Per taak zie je ook hoe vaak iedereen al aan de beurt was.</p>
+<p>De club zet de planning aan en vult die steeds een paar weken vooruit aan. De app verdeelt eerlijk: wie een taak het minst deed, is als eerste weer aan de beurt, en niemand krijgt alles in dezelfde week. Vakanties, vrije dagen en spelers die tijdelijk niet beschikbaar zijn, slaat hij over.</p>
+<p>Vraagt een ouder om het rooster? Maak er met <strong>Exporteren</strong> een pdf van om te delen of te printen.</p>
+<h2>Wat er nog komt</h2>
+<ul>
+<li><strong>Ruilen:</strong> een ouder die niet kan, ruilt zelf met een ander. Nu regel je dat nog via de groepsapp en geef je het door aan de club.</li>
+<li><strong>Afmelden voor een training:</strong> via een linkje in plaats van een berichtje in de groep.</li>
+<li><strong>Herinneringen:</strong> een mail aan wie aan de beurt is, met de wedstrijdinformatie erbij.</li>
+</ul><p class="next"><a href='#module-1'>← Terug naar het begin</a></p></section><section id="module-6" class="sec"><h1>Module 6: Wijzigingen via Beheer</h1>
+<p>Bij <strong>Beheer</strong> pas je je team aan na het versturen. Met <strong>Bewerken</strong> loop je de vijf stappen opnieuw door, bijvoorbeeld voor een nieuw mailadres of andere trainingstijden. Je kunt er ook de teamfoto wijzigen.</p>
+<p>Voor wijzigingen in de spelersgroep klik je op <strong>Speler erbij, eraf of naar ander team</strong>. Je kiest dan een van deze vier:</p>
+<table>
+<thead>
+<tr>
+<th>Keuze</th>
+<th>Wanneer</th>
+<th>Wat er gebeurt</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Nieuwe speler</td>
+<td>Er komt iemand bij</td>
+<td>De club zet hem erbij. Hij begint met evenveel beurten als wie het minst deed, zodat hij niet meteen alles krijgt.</td>
+</tr>
+<tr>
+<td>Speler naar ander team</td>
+<td>Hij stapt over binnen VFC</td>
+<td>De trainer van het nieuwe team krijgt hem aangeboden en accepteert. De club krijgt bericht. Zijn beurten gaan mee.</td>
+</tr>
+<tr>
+<td>Tijdelijk niet beschikbaar</td>
+<td>Bijvoorbeeld een lange blessure</td>
+<td>Hij blijft in het team, maar krijgt tot de datum die je kiest geen taken. Daarna doet hij vanzelf weer mee.</td>
+</tr>
+<tr>
+<td>Speler gaat van de club af</td>
+<td>Hij stopt bij VFC</td>
+<td>De club haalt hem eraf. Zijn geplande beurten worden opnieuw verdeeld; wat hij al deed, blijft in het overzicht.</td>
+</tr>
+</tbody>
+</table>
+<p>Krijg je zelf een speler aangeboden uit een ander team? Dan zie je bovenaan je dashboard <strong>komt over van</strong>, met de knoppen Accepteren en Weigeren.</p><p class="next"><a href='#module-1'>← Terug naar het begin</a></p></section></main>
+<script>
+function show(){var id=(location.hash||'#module-1').slice(1);if(!document.getElementById(id))id='module-1';
+document.querySelectorAll('.sec').forEach(function(s){s.classList.toggle('on',s.id===id)});
+document.querySelectorAll('nav a').forEach(function(a){a.classList.toggle('on',a.dataset.sec===id);if(a.dataset.sec===id)a.scrollIntoView({inline:'center',block:'nearest'})});
+window.scrollTo(0,0);}
+window.addEventListener('hashchange',show);show();
+</script></body></html>
