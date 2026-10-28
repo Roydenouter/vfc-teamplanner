@@ -368,6 +368,8 @@ td.tot{font-weight:700}
 .tl-ic{color:var(--pitch)}.tl-ic .ic{width:26px;height:26px}
 .tl-go{margin-left:auto;color:var(--pitch);font-weight:700;font-size:18px}
 .stand tr.me td{background:var(--pitch-soft);font-weight:700}
+.tb-frame{width:100%;height:min(72vh,640px);border:0;border-radius:12px;background:#0b0f1a;display:block}
+.btn-like{display:inline-flex;align-items:center;gap:6px;text-decoration:none;border:1px solid var(--pitch);color:var(--pitch);border-radius:10px;padding:9px 14px;font-weight:700}
 .crest{display:inline-flex;align-items:center;justify-content:center;width:var(--cs);height:var(--cs);border-radius:50%;background:var(--cb);color:#fff;font-size:calc(var(--cs) * .38);font-weight:800;letter-spacing:-.02em;flex:none;vertical-align:middle;line-height:1;font-family:var(--f-body)}
 .crest.vfc{color:#111;font-size:calc(var(--cs) * .3);box-shadow:inset 0 0 0 2px #111}
 .stand .crest{margin-right:8px}.reslist .crest{margin:0 5px 0 0}
@@ -1709,14 +1711,14 @@ function viewDash(){
         <div class="tablewrap"><table class="tt"><thead><tr><th>Speler</th>${head}</tr></thead><tbody>${rows}</tbody></table></div></div>`;
   })() : '<div class="empty">Dit team heeft geen taken met een rooster gekozen.</div>';
   const taken = `${td.tasks.length ? `<div class="exp-row"><p class="hint" style="margin:0">Vraagt iemand om het rooster? Maak er een pdf van om te delen of te printen.</p><button type="button" class="ghost" data-export="${esc(uidv)}|${esc(rec.key)}">${icon('export')} Rooster exporteren (pdf)</button></div>${app.expMsg ? `<p class="hint">${esc(app.expMsg)}</p>` : ''}` : ''}${tasksHTML}`;
-  const sec = ['taken','wissel'].includes(app.dsec) || (app.dsec === 'opstelling' && bigField(rec.team)) ? app.dsec : 'voetbal';
-  const subtabs = `<nav class="dtabs" role="tablist" aria-label="Onderdelen teamdashboard"><button type="button" role="tab" class="dtab" data-dsec="voetbal" aria-selected="${sec==='voetbal'}">${icon('ballen')} Voetbalzaken</button><button type="button" role="tab" class="dtab" data-dsec="taken" aria-selected="${sec==='taken'}">${icon('oefenstof')} Team Taken</button><button type="button" role="tab" class="dtab" data-dsec="wissel" aria-selected="${sec==='wissel'}">${icon('wissel')} Wisselschema</button>${bigField(rec.team) ? `<button type="button" role="tab" class="dtab" data-dsec="opstelling" aria-selected="${sec==='opstelling'}">${icon('pitch')} Opstelling</button>` : ''}</nav>`;
+  const sec = ['taken','wissel','tactiek'].includes(app.dsec) || (app.dsec === 'opstelling' && bigField(rec.team)) ? app.dsec : 'voetbal';
+  const subtabs = `<nav class="dtabs" role="tablist" aria-label="Onderdelen teamdashboard"><button type="button" role="tab" class="dtab" data-dsec="voetbal" aria-selected="${sec==='voetbal'}">${icon('ballen')} Voetbalzaken</button><button type="button" role="tab" class="dtab" data-dsec="taken" aria-selected="${sec==='taken'}">${icon('oefenstof')} Team Taken</button><button type="button" role="tab" class="dtab" data-dsec="wissel" aria-selected="${sec==='wissel'}">${icon('wissel')} Wisselschema</button>${bigField(rec.team) ? `<button type="button" role="tab" class="dtab" data-dsec="opstelling" aria-selected="${sec==='opstelling'}">${icon('pitch')} Opstelling</button>` : ''}<button type="button" role="tab" class="dtab" data-dsec="tactiek" aria-selected="${sec==='tactiek'}">${icon('people')} Tactiekbord</button></nav>`;
 
   return `<div class="stack">
     ${inviteBanner()}${transferBanner()}${prepBanner()}${sharedNote(list)}
     ${list.length > 1 ? `<div class="field" style="max-width:360px"><label class="label" for="dteam">Team</label><select id="dteam" data-dteam="1">${list.map(t => `<option value="${esc(t.rec.key)}" ${t.rec.key===app.dteam?'selected':''}>${esc(t.rec.team)}</option>`).join('')}</select></div>` : ''}
     ${app.upMsg ? `<p class="hint">${esc(app.upMsg)}</p>` : ''}
-    ${hero}${subtabs}${sec === 'taken' ? taken : sec === 'wissel' ? wsTab(rec, dash, uidv) : sec === 'opstelling' ? lineupCard(rec, dash, uidv) + rulesTile : results}</div>`;
+    ${hero}${subtabs}${sec === 'taken' ? taken : sec === 'wissel' ? wsTab(rec, dash, uidv) : sec === 'opstelling' ? lineupCard(rec, dash, uidv) + rulesTile : sec === 'tactiek' ? tactiekCard(rec, dash) : results}</div>`;
 }
 
 /* ---------- gebeurtenissen ---------- */
@@ -2597,6 +2599,28 @@ const FORMATIONS = {
 };
 Object.assign(app, {luSel:null, luSlot:null});
 const bigField = team => teamAge(team) >= 13;
+/* Tactiekbord: het bord van de trainer, rustig gestart met de eigen spelers en (vanaf O13) de gekozen opstelling. */
+const TACTIEK_URL = 'https://roydenouter.github.io/vfc-teamplanner/tactiek.html';
+function tactiekPayload(rec, dash){
+  const a = ageOf(rec.team), fmt = !a ? '6v6' : a <= 7 ? '4v4' : a <= 10 ? '6v6' : a <= 12 ? '8v8' : '11v11';
+  const ps = plist(rec), pl = p => p ? {num:p.num || '', name:p.name, pos:p.pos || [], keeper:!!p.keeper} : null;
+  const out = {team:rec.team, fmt, label:app.tbLabel || 'beide', players:ps.map(pl)};
+  if(fmt === '11v11'){
+    const ms = sortMs(dash.matches || []), today = todayISO(), up = ms.filter(m => m.date >= today && !Number.isFinite(m.gf));
+    const m = ms.find(x => x.id === app.luSel) || up[0] || ms.at(-1);
+    const lu = m && m.lineup11, form = lu && FORMATIONS[lu.form] ? lu.form : (FORMATIONS[dash.formation] ? dash.formation : '1-4-3-3');
+    out.formName = form;
+    if(m) out.match = vsLabel(rec, m).replace(rec.team, 'VFC');
+    out.lineup = FORMATIONS[form].map(([lab, sx, sy], i) => ({role:lab, x:sy / 100, y:sx / 100, p:pl(ps.find(p => p.id === ((lu && lu.slots) || []).at(i)))}));
+  }
+  return out;
+}
+function tactiekCard(rec, dash){
+  const url = TACTIEK_URL + '#d=' + encodeURIComponent(JSON.stringify(tactiekPayload(rec, dash)));
+  return `<div class="card"><div class="card-head" style="align-items:center;flex-wrap:wrap;gap:10px"><div><div class="kind">Tactiekbord</div><p class="hint" style="margin:2px 0 0">${bigField(rec.team) ? 'Start met je opstelling van het tabblad Opstelling.' : 'Start met je eigen spelers in de basisvorm.'} Versleep spelers en bal; onder Meer opties zitten looplijnen, passes en spelsituaties.</p></div>
+    <a class="ghost btn-like" href="${esc(url)}" target="_blank" rel="noopener">Openen op groot scherm ↗</a></div>
+    <iframe class="tb-frame" src="${esc(url)}" title="Tactiekbord ${esc(rec.team)}" allow="fullscreen" allowfullscreen loading="lazy"></iframe></div>`;
+}
 function lineupCard(rec, dash, uidv){
   const today = todayISO(), ms = sortMs(dash.matches || []), up = ms.filter(m => m.date >= today && !Number.isFinite(m.gf));
   if(!ms.length) return '';
