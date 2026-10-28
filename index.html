@@ -1237,24 +1237,35 @@ async function generate(key){
   try{
     const rec = recByKey(key), team = clone(app.teams[key]);
     const from = todayISO(), endT = toUTC(from) + app.horizon * 7 * 864e5, end = isoOf(Math.min(endT, toUTC(rec.season.end) || endT));
+    /* Rollend en eerlijk: toekomstige beurten die nog op Gepland staan en niet met de hand zijn geruild, worden opnieuw verdeeld. */
+    const before = team.moments.filter(m => m.date >= from && m.status === 'gepland' && !m.manual).length;
+    team.moments = team.moments.filter(m => !(m.date >= from && m.status === 'gepland' && !m.manual));
     const have = new Set(team.moments.map(m => m.task + '|' + m.date));
-    const planned = {}; team.moments.filter(m => m.status === 'gepland').forEach(m => m.who.forEach(w => { planned[m.task + '|' + w] = (planned[m.task + '|' + w] || 0) + 1; }));
-    let added = 0;
+    const planned = {}, plannedAll = {}, week = {};
+    const wk = iso => { const t = toUTC(iso), d = (new Date(t).getUTCDay() + 6) % 7; return isoOf(t - d * 864e5); };
+    const mark = (task, w, date) => { planned[task + '|' + w] = (planned[task + '|' + w] || 0) + 1; plannedAll[w] = (plannedAll[w] || 0) + 1; week[wk(date) + '|' + w] = (week[wk(date) + '|' + w] || 0) + 1; };
+    team.moments.filter(m => m.status === 'gepland').forEach(m => m.who.forEach(w => mark(m.task, w, m.date)));
+    const order = team.players.map(x => x.reg);
+    const totalAll = k => ROSTER_ITEMS.reduce((n, i) => n + cnt(app.reg[k], i.id).total, 0) + (plannedAll[k] || 0);
+    const todo = [];
     activeExtras(rec).filter(i => i.roster).forEach(i => {
       const cfg = rec.cfg[i.id], n = i.roster.countLabel ? Math.max(1, +cfg.count || 1) : 1;
-      moments(i, cfg, rec.season).filter(m => m.date >= from && m.date <= end && !have.has(i.id + '|' + m.date)).forEach(m => {
-        const pool = eligible(team, rec, i.id);
-        const order = team.players.map(x => x.reg);
+      moments(i, cfg, rec.season).filter(m => m.date >= from && m.date <= end && !have.has(i.id + '|' + m.date)).forEach(m => todo.push({i, cfg, n, m, k:ROSTER_ITEMS.indexOf(i)}));
+    });
+    todo.sort((x, y) => x.m.date.localeCompare(y.m.date) || x.k - y.k);
+    let added = 0;
+    todo.forEach(({i, cfg, n, m}) => {
+      const pool = eligible(team, rec, i.id), who = [];
+      for(let c = 0; c < n && pool.length; c++){
         const score = k => cnt(app.reg[k], i.id).total + (planned[i.id + '|' + k] || 0);
-        pool.sort((a,b) => score(a) - score(b) || String(cnt(app.reg[a], i.id).last).localeCompare(String(cnt(app.reg[b], i.id).last)) || order.indexOf(a) - order.indexOf(b));
-        const who = pool.slice(0, Math.min(n, pool.length));
-        who.forEach(w => { planned[i.id + '|' + w] = (planned[i.id + '|' + w] || 0) + 1; });
-        team.moments.push({id:'m' + Date.now().toString(36) + (added++), task:i.id, date:m.date, label:m.label, time:cfg.time||'', who, status:'gepland'});
-      });
+        pool.sort((a,b) => score(a) - score(b) || (week[wk(m.date) + '|' + a] || 0) - (week[wk(m.date) + '|' + b] || 0) || totalAll(a) - totalAll(b) || String(cnt(app.reg[a], i.id).last).localeCompare(String(cnt(app.reg[b], i.id).last)) || order.indexOf(a) - order.indexOf(b));
+        const w = pool.shift(); who.push(w); mark(i.id, w, m.date);
+      }
+      team.moments.push({id:'m' + Date.now().toString(36) + (added++), task:i.id, date:m.date, label:m.label, time:cfg.time||'', who, status:'gepland'});
     });
     team.moments.sort((a,b) => a.date.localeCompare(b.date) || a.task.localeCompare(b.task));
     await putDoc('teams/' + key, team); app.teams[key] = team; await mirrorDash(key);
-    app.note = {kind:'ok', text: added ? `${added} ${added===1?'moment':'momenten'} ingepland tot en met ${fmtLong(end)}.` : `Alles tot en met ${fmtLong(end)} stond al in de planning.`};
+    app.note = {kind:'ok', text: added ? `Planning tot en met ${fmtLong(end)} eerlijk verdeeld (${added} ${added===1?'beurt':'beurten'}${before ? ', opnieuw verdeeld' : ''}).` : `Alles tot en met ${fmtLong(end)} stond al in de planning.`};
   } catch(e){ app.note = {kind:'warn', text:'Plannen is niet gelukt. Probeer het opnieuw.'}; }
   app.busy = false; render();
 }
@@ -1270,7 +1281,7 @@ async function setMoment(key, mid, action, extra){
     if(action === 'gedaan' && m.status !== 'gedaan'){ for(const k of m.who) await bump(k, 1); m.status = 'gedaan'; }
     else if(action === 'afgelast'){ if(m.status === 'gedaan') for(const k of m.who) await bump(k, -1); m.status = 'afgelast'; }
     else if(action === 'terug'){ if(m.status === 'gedaan') for(const k of m.who) await bump(k, -1); m.status = 'gepland'; }
-    else if(action === 'ruil' && m.status === 'gepland'){ const [oldK, newK] = extra; m.who = m.who.map(w => w === oldK ? newK : w); }
+    else if(action === 'ruil' && m.status === 'gepland'){ const [oldK, newK] = extra; m.who = m.who.map(w => w === oldK ? newK : w); m.manual = true; }
     await putDoc('teams/' + key, team); app.teams[key] = team; await mirrorDash(key);
   } catch(e){ app.note = {kind:'warn', text:'Opslaan is niet gelukt. Probeer het opnieuw.'}; }
   app.busy = false; render();
