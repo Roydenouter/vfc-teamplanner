@@ -1659,6 +1659,7 @@ function viewDash(){
   const subtabs = `<nav class="dtabs" role="tablist" aria-label="Onderdelen teamdashboard"><button type="button" role="tab" class="dtab" data-dsec="voetbal" aria-selected="${sec==='voetbal'}">${icon('ballen')} Voetbalzaken</button><button type="button" role="tab" class="dtab" data-dsec="taken" aria-selected="${sec==='taken'}">${icon('oefenstof')} Team Taken</button><button type="button" role="tab" class="dtab" data-dsec="wissel" aria-selected="${sec==='wissel'}">${icon('wissel')} Wisselschema</button></nav>`;
 
   return `<div class="stack">
+    ${typeof prepBanner === 'function' ? prepBanner() : ''}
     ${list.length > 1 ? `<div class="field" style="max-width:360px"><label class="label" for="dteam">Team</label><select id="dteam" data-dteam="1">${list.map(t => `<option value="${esc(t.rec.key)}" ${t.rec.key===app.dteam?'selected':''}>${esc(t.rec.team)}</option>`).join('')}</select></div>` : ''}
     ${app.upMsg ? `<p class="hint">${esc(app.upMsg)}</p>` : ''}
     ${hero}${subtabs}${sec === 'taken' ? taken : sec === 'wissel' ? wsTab(rec, dash, uidv) : results}</div>`;
