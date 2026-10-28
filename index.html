@@ -1347,7 +1347,7 @@ function adminAanvragen(){
       : '<div class="empty">Nog geen aanvragen binnen. Zodra een team een aanmelding verstuurt, verschijnt die hier.</div>'}
     </section>
     ${sel ? `<section class="panel"><div class="card-head"><div class="panel-head"><div class="kind">Aanvraag</div><h2>${esc(sel.rec.team)}</h2><p class="hint">Verstuurd ${fmtTime(sel.rec.updatedAt)}${sel.rec.submittedAt!==sel.rec.updatedAt?` · eerste keer ${fmtTime(sel.rec.submittedAt)}`:''}</p></div>${statusPill(sel.rec.status)}</div>
-      <div class="btns"><button type="button" class="primary" data-activate="${esc(sel.uid + '/' + sel.rec.key)}" ${app.busy?'disabled':''}>${app.teams[sel.rec.key] ? 'Spelers opnieuw synchroniseren' : 'Team activeren'}</button><span class="hint">${app.teams[sel.rec.key] ? 'Neemt wijzigingen in de spelerslijst over in het register. Tellers blijven staan.' : 'Zet de status op Actief en zet de spelers in het register.'}</span></div>
+      <div class="btns"><button type="button" class="ghost" data-testmatch="${esc(sel.uid + '/' + sel.rec.key)}" title="Voor testen, zolang Voetbal.nl (Sportlink) nog niet gekoppeld is">Testwedstrijden toevoegen</button><button type="button" class="primary" data-activate="${esc(sel.uid + '/' + sel.rec.key)}" ${app.busy?'disabled':''}>${app.teams[sel.rec.key] ? 'Spelers opnieuw synchroniseren' : 'Team activeren'}</button><span class="hint">${app.teams[sel.rec.key] ? 'Neemt wijzigingen in de spelerslijst over in het register. Tellers blijven staan.' : 'Zet de status op Actief en zet de spelers in het register.'}</span></div>
       ${reviewHTML(sel.rec, 'adm-' + sel.rec.key + '-')}
       <details class="flow"><summary>Samenvatting als tekst</summary><div class="group"><pre class="sum" id="admSum">${esc(summaryText(sel.rec))}</pre><div class="btns"><button type="button" class="ghost" data-copy="admSum">Kopieer samenvatting</button><span class="status" id="copyStatus" role="status"></span></div></div></details></section>` : ''}`;
 }
@@ -2530,6 +2530,17 @@ document.addEventListener('change', async e => {
   else if(x.luf){ const [u, k] = x.luf.split('|'); app.dash[k] = {...(app.dash[k] || {}), formation:t.value}; await saveLineup(u, k, app.luSel, lu => { lu.form = t.value; }); try{ await saveDash(u, k, {formation:t.value}); }catch(err){} }
 });
 
+/* testwedstrijden (alleen clubbeheer) zolang Voetbal.nl (Sportlink) niet gekoppeld is */
+document.addEventListener('click', async e => {
+  const b = e.target.closest('button'); if(!b || !b.dataset.testmatch) return;
+  const [u, k] = b.dataset.testmatch.split('/'), dash = app.dash[k] || {};
+  const opp = ['Excelsior Maassluis','Vlaardingia','DSO','SVV','Zwaluwen','HVO'], base = new Date(), out = (dash.matches || []).slice();
+  const sat = new Date(base); sat.setDate(base.getDate() + ((6 - base.getDay() + 7) % 7 || 7));
+  for(let i = 0; i < 6; i++){ const d = new Date(sat); d.setDate(sat.getDate() + 7 * i); const iso = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    if(out.some(m => m.date === iso)) continue; out.push({id:'t' + Date.now().toString(36) + i, date:iso, time:['10:00','11:30','12:45','14:30','10:30','13:00'].at(i), opp:opp.at(i) + ' ' + ((recByKey(k) || {}).team || '').replace(/^VFC\s*/, '').replace(/-\d+.*/, '-1'), home:i % 2 === 0, gf:null, ga:null, scorers:{}, att:{}, test:true}); }
+  try{ await saveDash(u, k, {matches:out}); app.note = {kind:'ok', text:'Zes testwedstrijden toegevoegd, de komende zaterdagen. Ze staan nu op het dashboard van dit team.'}; }catch(err){ app.note = {kind:'warn', text:'Toevoegen is niet gelukt.'}; }
+  render();
+});
 /* ================= start ================= */
 render();
 (async () => {
