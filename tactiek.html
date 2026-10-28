@@ -2981,7 +2981,11 @@ body.focus-mode #vfcBar{bottom:8px;opacity:.55}body.focus-mode #vfcBar:hover{opa
       if(!on && document.exitFullscreen) document.exitFullscreen().catch(() => {});
       if(isFocusMode !== on) toggleFocusMode();
     }
-    else if(b.dataset.a === 'more'){ document.body.classList.toggle('vfc-calm'); bar(); setTimeout(resizeCanvas, 60); }
+    else if(b.dataset.a === 'more'){
+      /* in het dashboard (klein venster) openen we de uitgebreide versie in een eigen venster */
+      if(window.top !== window && document.body.classList.contains('vfc-calm')){ window.open(location.href.split('#')[0].replace(/[?&]meer=1/, '') + (location.search ? '&' : '?') + 'meer=1' + location.hash, '_blank', 'noopener'); return; }
+      document.body.classList.toggle('vfc-calm'); bar(); setTimeout(resizeCanvas, 60);
+    }
     else if(b.dataset.a === 'png'){
       const a = document.createElement('a'); a.download = ((T.team || 'opstelling') + '.png').replace(/[^\w.\- ]+/g, ''); a.href = canvas.toDataURL('image/png'); document.body.appendChild(a); a.click(); a.remove();
     }
@@ -2992,7 +2996,7 @@ body.focus-mode #vfcBar{bottom:8px;opacity:.55}body.focus-mode #vfcBar:hover{opa
     /* rustige start: geen driehoeken, tegenstanders en looplijnen */
     showTriangles = false; showOpponents = false; showPaths = false;
     ['btnToggleTriangles','btnToggleOpponents','btnTogglePaths'].forEach(id => { const x = document.getElementById(id); if(x) x.classList.remove('icon-toggle-active'); });
-    document.body.classList.add('vfc-calm');
+    if(!/[?&]meer=1/.test(location.search)) document.body.classList.add('vfc-calm');
     if(prev) prev();
     currentScenario = 'formatie';
     document.querySelectorAll('.scenario-btn').forEach(btn => btn.classList.toggle('scenario-pill-active', btn.dataset.scenario === 'formatie'));
