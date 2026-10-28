@@ -507,7 +507,8 @@ dialog::backdrop{background:var(--shade)}
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--grass-a:#1f4a25;--grass-b:#24542a;--grass-line:rgba(255,255,255,.55)}}
 :root[data-theme="dark"]{--grass-a:#1f4a25;--grass-b:#24542a;--grass-line:rgba(255,255,255,.55)}
 .lu-ctrl{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap}.lu-ctrl select{min-width:150px}
-.lu-wrap{position:relative}
+.lu-wrap{position:relative;display:grid;grid-template-columns:minmax(0,1fr);gap:14px;align-items:start}
+.lu-wrap.open{grid-template-columns:minmax(0,1fr) 280px}
 .lu-svg{display:block;width:100%;height:auto;border-radius:16px}
 .lu-dir{font-size:12px;font-weight:600;fill:rgba(255,255,255,.55);letter-spacing:.06em}
 .lu-tok{cursor:pointer;outline:none}
@@ -522,7 +523,7 @@ dialog::backdrop{background:var(--shade)}
 .lu-pill{fill:rgba(15,15,12,.78)}
 .lu-name{font-size:13px;font-weight:600;fill:#fff}
 .lu-pos{font-size:11px;font-weight:700;fill:rgba(255,255,255,.75);letter-spacing:.05em}
-.lu-picker{position:absolute;right:12px;top:12px;width:min(300px,calc(100% - 24px));max-height:calc(100% - 24px);overflow:auto;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px;box-shadow:0 10px 30px rgba(0,0,0,.4);display:grid;gap:8px}
+.lu-picker{position:static;height:0;min-height:100%;box-sizing:border-box;overflow:auto;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px;display:grid;gap:8px;align-content:start}
 .lu-picker.left{right:auto;left:12px}
 .lu-plist{display:grid;gap:4px}
 .lu-pbtn{display:grid;grid-template-columns:34px minmax(0,1fr) auto;gap:8px;align-items:center;text-align:left;border:1px solid var(--line);background:none;color:var(--ink);border-radius:8px;padding:6px 8px;font:inherit;cursor:pointer}
@@ -533,7 +534,7 @@ dialog::backdrop{background:var(--shade)}
 .lu-chip{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:999px;padding:3px 10px 3px 4px;font-size:13px}
 .lu-chip b{display:inline-grid;place-items:center;min-width:24px;height:24px;border-radius:50%;background:var(--pitch);color:var(--chalk);font-family:var(--f-display);font-size:14px}
 .lu-chip small{color:var(--muted);font-size:11px}.lu-chip.off{opacity:.5}.lu-chip.off b{background:var(--line);color:var(--ink)}
-@media (max-width:620px){.lu-picker{position:static;width:auto;max-height:none;margin-top:10px}}
+@media (max-width:760px){.lu-wrap.open{grid-template-columns:minmax(0,1fr)}.lu-picker{height:auto;min-height:0;max-height:420px}}
 </style>
 
 <div class="wrap">
@@ -1671,7 +1672,6 @@ function viewDash(){
   const rest = upcoming.slice(3);
   const progCard = `<div class="card"><div class="kind">Voetbalprogramma</div>${rest.length ? `<ul class="proglist">${rest.map(m => `<li><button type="button" class="pl-row${app.open.mcard === m.id ? ' sel' : ''}" data-mcard="${esc(m.id)}"><span class="pl-d">${fmt(m.date)}</span><span class="pl-tm">${esc(m.time||'')}</span><b class="pl-h">${sideName(m, true)}</b><small class="pl-x">vs</small><b class="pl-a">${sideName(m, false)}</b></button></li>`).join('')}</ul>` : '<p class="hint">Alle bekende wedstrijden staan bovenaan. Nieuwe wedstrijden komen hier vanzelf bij.</p>'}</div>`;
   const results = `<div class="dquad">${cat && cat.stand ? resCard + standHTML(rec, dash, uidv) + progCard + topCard : resCard + topCard + `<div class="span2">${progCard}</div>`}</div>
-  ${bigField(rec.team) ? lineupCard(rec, dash, uidv) : ''}
   ${cat && cat.rules ? `<a class="tile-link" href="${cat.rules}" target="_blank" rel="noopener"><span class="tl-ic">${icon('oefenstof')}</span><span><b>Spelregels ${esc(cat.label)}</b><small>${esc(cat.desc)} · KNVB</small></span><span class="tl-go">↗</span></a>` : ''}`;
 
   /* taken */
@@ -1696,14 +1696,14 @@ function viewDash(){
         <div class="tablewrap"><table class="tt"><thead><tr><th>Speler</th>${head}</tr></thead><tbody>${rows}</tbody></table></div></div>`;
   })() : '<div class="empty">Dit team heeft geen taken met een rooster gekozen.</div>';
   const taken = `${td.tasks.length ? `<div class="exp-row"><p class="hint" style="margin:0">Vraagt iemand om het rooster? Maak er een pdf van om te delen of te printen.</p><button type="button" class="ghost" data-export="${esc(uidv)}|${esc(rec.key)}">${icon('export')} Rooster exporteren (pdf)</button></div>${app.expMsg ? `<p class="hint">${esc(app.expMsg)}</p>` : ''}` : ''}${tasksHTML}`;
-  const sec = ['taken','wissel'].includes(app.dsec) ? app.dsec : 'voetbal';
-  const subtabs = `<nav class="dtabs" role="tablist" aria-label="Onderdelen teamdashboard"><button type="button" role="tab" class="dtab" data-dsec="voetbal" aria-selected="${sec==='voetbal'}">${icon('ballen')} Voetbalzaken</button><button type="button" role="tab" class="dtab" data-dsec="taken" aria-selected="${sec==='taken'}">${icon('oefenstof')} Team Taken</button><button type="button" role="tab" class="dtab" data-dsec="wissel" aria-selected="${sec==='wissel'}">${icon('wissel')} Wisselschema</button></nav>`;
+  const sec = ['taken','wissel'].includes(app.dsec) || (app.dsec === 'opstelling' && bigField(rec.team)) ? app.dsec : 'voetbal';
+  const subtabs = `<nav class="dtabs" role="tablist" aria-label="Onderdelen teamdashboard"><button type="button" role="tab" class="dtab" data-dsec="voetbal" aria-selected="${sec==='voetbal'}">${icon('ballen')} Voetbalzaken</button><button type="button" role="tab" class="dtab" data-dsec="taken" aria-selected="${sec==='taken'}">${icon('oefenstof')} Team Taken</button><button type="button" role="tab" class="dtab" data-dsec="wissel" aria-selected="${sec==='wissel'}">${icon('wissel')} Wisselschema</button>${bigField(rec.team) ? `<button type="button" role="tab" class="dtab" data-dsec="opstelling" aria-selected="${sec==='opstelling'}">${icon('pitch')} Opstelling</button>` : ''}</nav>`;
 
   return `<div class="stack">
     ${inviteBanner()}${transferBanner()}${prepBanner()}${sharedNote(list)}
     ${list.length > 1 ? `<div class="field" style="max-width:360px"><label class="label" for="dteam">Team</label><select id="dteam" data-dteam="1">${list.map(t => `<option value="${esc(t.rec.key)}" ${t.rec.key===app.dteam?'selected':''}>${esc(t.rec.team)}</option>`).join('')}</select></div>` : ''}
     ${app.upMsg ? `<p class="hint">${esc(app.upMsg)}</p>` : ''}
-    ${hero}${subtabs}${sec === 'taken' ? taken : sec === 'wissel' ? wsTab(rec, dash, uidv) : results}</div>`;
+    ${hero}${subtabs}${sec === 'taken' ? taken : sec === 'wissel' ? wsTab(rec, dash, uidv) : sec === 'opstelling' ? lineupCard(rec, dash, uidv) : results}</div>`;
 }
 
 /* ---------- gebeurtenissen ---------- */
@@ -2604,7 +2604,7 @@ function lineupCard(rec, dash, uidv){
     const lab = slots.at(app.luSlot)[0], g = POS_GROUP[lab], cur = fill.at(app.luSlot);
     const score = p => (p.pos || []).includes(lab) ? 0 : (p.pos || []).some(q => POS_GROUP[q] === g) ? 1 : 2;
     const list = ps.filter(avail).sort((a, b) => score(a) - score(b) || (placed.has(a.id) ? 1 : 0) - (placed.has(b.id) ? 1 : 0) || String(a.num || 99).localeCompare(String(b.num || 99), 'nl', {numeric:true}));
-    picker = `<div class="lu-picker${slots.at(app.luSlot)[2] > 50 ? ' left' : ''}"><div class="card-head" style="align-items:center"><b>Wie speelt ${esc(lab)}?</b><button type="button" class="link-btn" data-lupclose="1">Sluiten</button></div>
+    picker = `<div class="lu-picker"><div class="card-head" style="align-items:center"><b>Wie speelt ${esc(lab)}?</b><button type="button" class="link-btn" data-lupclose="1">Sluiten</button></div>
       <div class="lu-plist">${list.map(p => `<button type="button" class="lu-pbtn${p.id === cur ? ' on' : ''}${score(p) === 0 ? ' fit' : ''}" data-lupick="${esc(p.id)}"><b>${esc(p.num || '–')}</b><span>${esc(p.name)}</span><small>${placed.has(p.id) && p.id !== cur ? 'staat al op ' + esc(slots.at(fill.indexOf(p.id))[0]) : (p.pos || []).join(' ')}</small></button>`).join('')}
       ${cur ? `<button type="button" class="lu-pbtn clear" data-lupick="">Plek leegmaken</button>` : ''}</div></div>`;
   }
@@ -2614,7 +2614,7 @@ function lineupCard(rec, dash, uidv){
       <div class="lu-ctrl"><div class="field"><label class="label" for="lum">Wedstrijd</label><select id="lum" data-lum="1">${ms.slice().reverse().map(opt).join('')}</select></div>
       <div class="field"><label class="label" for="luf">Speltype</label><select id="luf" data-luf="${esc(uidv)}|${esc(rec.key)}">${Object.keys(FORMATIONS).map(f => `<option ${f === form ? 'selected' : ''}>${f}</option>`).join('')}</select></div>
       <button type="button" class="ghost" data-luauto="${esc(uidv)}|${esc(rec.key)}">Automatisch invullen</button></div></div>
-    <div class="lu-wrap"><svg viewBox="0 0 ${W} ${H}" class="lu-svg" role="img" aria-label="Opstelling ${esc(form)} voor ${esc(vsLabel(rec, m))}">${pitch}${tokens}</svg>${picker}</div>
+    <div class="lu-wrap${picker ? ' open' : ''}"><div class="lu-fieldbox"><svg viewBox="0 0 ${W} ${H}" class="lu-svg" role="img" aria-label="Opstelling ${esc(form)} voor ${esc(vsLabel(rec, m))}">${pitch}${tokens}</svg></div>${picker}</div>
     <div class="lu-bench"><span class="label">Wissels</span>${bench.length ? bench.map(chip).join('') : '<small class="hint">geen</small>'}${absent.length ? `<span class="label" style="margin-left:12px">Afwezig</span>${absent.map(p => `<span class="lu-chip off"><b>${esc(p.num || '–')}</b>${esc(p.name)}</span>`).join('')}` : ''}</div>
     ${ps.some(p => p.num) ? '' : '<p class="hint" style="margin:0">Tip: zet bij Beheer → Bewerken → Spelers het schuifje Rugnummers en posities aan, dan staan de nummers in de cirkels.</p>'}
   </div>`;
