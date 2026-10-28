@@ -236,8 +236,15 @@ td.tot{font-weight:700}
 .kpi span{font-size:12px;color:var(--muted)}
 .kpi.hi b{color:var(--pitch)}
 .form-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
-.fd{width:16px;height:16px;border-radius:50%;display:inline-block;box-sizing:border-box}
-.fd.w{background:var(--pitch)}.fd.g{background:var(--muted)}.fd.v{border:2px solid var(--t-ouder)}
+.fd{width:17px;height:17px;border-radius:50%;display:inline-block;box-sizing:border-box;position:relative;animation:fdIn .45s cubic-bezier(.3,1.5,.5,1) both}
+.fd.w{background:radial-gradient(circle at 35% 30%,#d9f2df 0,#5fb27a 40%,#2c6b41 100%);box-shadow:0 2px 3px rgba(0,0,0,.45),inset 0 -2px 2px rgba(0,0,0,.22)}
+.fd.g{background:radial-gradient(circle at 35% 30%,#f2f0ea 0,#a9a597 45%,#5f5c52 100%);box-shadow:0 2px 3px rgba(0,0,0,.45),inset 0 -2px 2px rgba(0,0,0,.22)}
+.fd.v{background:radial-gradient(circle at 35% 30%,#4a2420 0,#2a1513 70%);box-shadow:inset 0 0 0 2px #d0675d,0 2px 3px rgba(0,0,0,.45)}
+.fd.last::after{content:'';position:absolute;inset:-4px;border-radius:50%;border:2px solid #5fb27a;opacity:0;animation:fdRing 2.2s 1.1s ease-out infinite}
+.fd.last.g::after{border-color:#a9a597}.fd.last.v::after{border-color:#d0675d}
+@keyframes fdIn{from{opacity:0;transform:translateY(6px) scale(.4)}to{opacity:1;transform:none}}
+@keyframes fdRing{0%{opacity:.75;transform:scale(.8)}100%{opacity:0;transform:scale(1.55)}}
+@media (prefers-reduced-motion:reduce){.fd,.fd.last::after{animation:none}}
 .nextm{border-color:var(--pitch)}
 .att-num{text-align:right}.att-num b{font-family:var(--f-display);font-size:38px;color:var(--pitch);line-height:1;display:block}.att-num span{font-size:12px;color:var(--muted)}
 .attbar{height:10px;border-radius:5px;background:var(--bg);overflow:hidden;display:flex;border:1px solid var(--line)}
@@ -1606,7 +1613,7 @@ function viewDash(){
   const scorers = {}; ms.forEach(m => Object.entries(m.scorers || {}).forEach(([p,n]) => { scorers[p] = (scorers[p]||0) + n; }));
   const top = Object.entries(scorers).filter(([,n]) => n > 0).sort((a,b) => b[1]-a[1]).slice(0, 5);
   const res = m => m.gf > m.ga ? 'w' : m.gf === m.ga ? 'g' : 'v';
-  const dot = r => `<span class="fd ${r}" title="${r==='w'?'gewonnen':r==='g'?'gelijk':'verloren'}"></span>`;
+  const dot = (r, i, all) => `<span class="fd ${r}${i === all.length - 1 ? ' last' : ''}" style="animation-delay:${(0.1 + i * 0.13).toFixed(2)}s" title="${r==='w'?'gewonnen':r==='g'?'gelijk':'verloren'}"></span>`;
   const attOf = m => { const a = m.att || {}; return {yes:ps.filter(p => a[p.id] === 'ja'), no:ps.filter(p => a[p.id] === 'nee')}; };
   const matchTitle = m => m.home ? `VFC – ${crest(m.opp, 18)}${esc(m.opp)}` : `${crest(m.opp, 18)}${esc(m.opp)} – VFC`;
   const photo = dash.photo && dash.photo.url ? `<img class="hphoto" src="${esc(dash.photo.url)}" alt="Teamfoto ${esc(rec.team)}">` : `<div class="hphoto empty-photo"><span>Teamfoto</span></div>`;
