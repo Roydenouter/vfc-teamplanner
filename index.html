@@ -476,6 +476,10 @@ dialog::backdrop{background:var(--shade)}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 .reglegend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:13px;color:var(--muted)}.reglegend .ic{width:16px;height:16px;color:var(--pitch);vertical-align:-3px;margin-right:4px}
 .sync-note{display:flex;gap:6px;align-items:flex-start;margin:4px 0 0;font-size:12px;color:var(--muted)}.sync-note .ic{width:14px;height:14px;flex:none;margin-top:2px;opacity:.7}
+.prep-banner{display:flex;gap:14px;align-items:center;justify-content:space-between;flex-wrap:wrap;border:1px solid var(--pitch);background:var(--pitch-soft);border-radius:12px;padding:14px 16px}
+.prep-banner b{font-size:16px}.prep-banner p{margin:2px 0 0;color:var(--muted)}
+.indt td,.indt th{padding:8px 10px;vertical-align:top}.indt input{min-width:220px}
+.indt small{color:var(--muted)}
 </style>
 
 <div class="wrap">
@@ -1010,15 +1014,26 @@ function stepTeam(d){
       <div><button type="button" class="ghost" id="addStaff">+ Trainer of leider</button></div></div>
     <p class="hint">Wil je eerst zien hoe het werkt? <button type="button" class="link-btn" id="loadExample">Vul een voorbeeldteam in</button></p>`;
 }
+const MSGTO = [['ouders','Ouders/verzorgers'],['beide','Speler en ouders'],['speler','De speler zelf']];
+const teamAge = t => { const m = /\bM?O(\d+)/i.exec(t || ''); return m ? +m[1] : 0; };
+const defaultMsgTo = t => { const a = teamAge(t); return !a || a <= 12 ? 'ouders' : a <= 15 ? 'beide' : 'speler'; };
+const msgToOf = d => d.msgTo || defaultMsgTo(d.team);
 function stepPlayers(d){
+  const mt = msgToOf(d), age = teamAge(d.team), wantSelf = mt !== 'ouders', wantPar = mt !== 'speler';
   return `<div class="panel-head"><h2>Spelers</h2><p class="hint">Elke taak staat op naam van de speler; wie van de familie hem uitvoert, regelen ze thuis. Per speler kun je meerdere contactpersonen opgeven: ouders, verzorgers, broers of zussen. Met een mailadres krijgen ze de agenda en herinneringen; zonder mailadres krijgen ze later een abonneerlink. De club gebruikt de mailadressen alleen voor de teamagenda.</p></div>
+    <div class="field"><span class="label">Berichten over wedstrijden, aanwezigheid en taken gaan naar</span>
+      <div class="seg">${MSGTO.map(([v,l]) => `<label><input type="radio" name="msgto" data-msgto="${v}" ${mt===v?'checked':''}><span>${l}</span></label>`).join('')}</div>
+      <p class="hint" style="margin:0">${d.msgTo ? '' : `Standaard voor ${age ? 'O' + age : 'dit team'}: ${esc((MSGTO.find(x => x[0] === mt) || [0,''])[1].toLowerCase())}. `}Tot en met O12 meestal de ouders, vanaf O16 meestal de speler zelf.${mt === 'speler' && age && age < 16 ? ' Let op: onder de 16 is toestemming van een ouder nodig; we vragen die bij de eerste mail.' : ''}</p></div>
     <div class="pblocks">${d.players.filter(p => !p.left).map((p,k)=>`<div class="pblock">
       <div class="phead2"><span class="n">${k+1}</span><input type="text" id="pn-${p.id}" data-p="${p.id}" value="${esc(p.name)}" placeholder="voornaam speler" aria-label="Voornaam speler ${k+1}"><button type="button" class="icon-btn" data-del="${p.id}" aria-label="Verwijder speler ${k+1}">×</button></div>
-      <div class="crows"><span class="label" style="font-size:12px">Contactpersoon</span>${p.contacts.map((c,ci)=>`<div class="crow">
+      ${wantSelf ? `<div class="crows"><span class="label" style="font-size:12px">Speler zelf</span><div class="crow">
+        <input type="email" class="em ${badMail((p.self||{}).email)?'bad':''}" id="se-${p.id}" data-ps="${p.id}" data-pk="email" value="${esc((p.self||{}).email||'')}" placeholder="mailadres speler" aria-label="Mailadres speler ${k+1}">
+        <input type="tel" id="sp-${p.id}" data-ps="${p.id}" data-pk="phone" value="${esc((p.self||{}).phone||'')}" placeholder="mobiel speler" aria-label="Mobiel speler ${k+1}"><span></span></div></div>` : ''}
+      ${wantPar ? `<div class="crows"><span class="label" style="font-size:12px">Contactpersoon</span>${p.contacts.map((c,ci)=>`<div class="crow">
         <input type="text" id="cn-${p.id}-${ci}" data-cp="${p.id}" data-ci="${ci}" data-ck="name" value="${esc(c.name)}" placeholder="voornaam contactpersoon" aria-label="Voornaam contactpersoon ${ci+1} van speler ${k+1}">
         <input type="email" class="em ${badMail(c.email)?'bad':''}" id="ce-${p.id}-${ci}" data-cp="${p.id}" data-ci="${ci}" data-ck="email" value="${esc(c.email)}" placeholder="mailadres" aria-label="Mailadres contactpersoon ${ci+1} van speler ${k+1}">
         <button type="button" class="icon-btn" data-cdel="${p.id}|${ci}" aria-label="Verwijder contactpersoon" ${p.contacts.length<2?'disabled':''}>×</button></div>`).join('')}</div>
-      <div><button type="button" class="link-btn" data-cadd="${p.id}">+ Contactpersoon</button></div></div>`).join('')}</div>
+      <div><button type="button" class="link-btn" data-cadd="${p.id}">+ Contactpersoon</button></div>` : ''}</div>`).join('')}</div>
     <div><button type="button" class="ghost" id="addPlayer">+ Speler</button></div>
     ${pastList(d).length ? `<div class="group"><span class="label">Niet meer in het team</span><p class="hint">Deze spelers blijven bewaard voor de geschiedenis van het rooster, maar krijgen geen nieuwe taken en berichten meer.</p><div class="chips">${pastList(d).map(p => `<span class="chip">${esc(p.name)} · ${esc(leftLabel(p))}</span>`).join('')}</div></div>` : ''}
     <p class="hint" id="pcount">${plist(d).length} ${plist(d).length===1?'speler':'spelers'} ingevuld.</p>`;
@@ -1084,8 +1099,9 @@ function renderTabs(){
   document.getElementById('tabs').innerHTML = tabs.map(([k,l,n]) => `<button type="button" class="tab" role="tab" aria-selected="${app.tab===k}" data-tab="${k}">${l}${n?`<span class="badge">${n}</span>`:''}</button>`).join('') + (app.realOwner ? `<button type="button" class="tab viewas${app.owner ? '' : ' on'}" data-viewas="1">${app.owner ? 'Bekijk als trainer' : '← Terug naar clubbeheer'}</button>` : '');
 }
 function viewForm(){
+  const pb = prepBanner();
   const d = app.d, body = [stepTeam, stepPlayers, stepBasis, stepExtras, stepReview][app.step](d);
-  return `<div class="stack">
+  return `<div class="stack">${pb}
     <ol class="stepper">${STEPS.map((s,k)=>`<li><button type="button" data-goto="${k}" ${k===app.step?'aria-current="step"':''} class="${k<app.step?'done':''}"><span class="dot">${k+1}</span><span class="txt">${s}</span></button></li>`).join('')}</ol>
     <section class="panel">${body}
       <div class="navrow"><div>${app.step>0?`<button type="button" class="ghost" data-goto="${app.step-1}">Vorige</button>`:''}</div>
@@ -1340,8 +1356,8 @@ function adminWijzigingen(){
 }
 function viewAdmin(){
   const newMut = app.all.reduce((n,a) => n + (a.rec.mutaties||[]).filter(m=>m.status==='Nieuw').length, 0);
-  const tabs = [['aanvragen','Aanvragen'],['planning','Teams en planning'],['spelers','Spelersregister'],['wijzigingen','Wijzigingen' + (newMut?` (${newMut})`:'')]];
-  const body = app.atab === 'planning' ? adminPlanning() : app.atab === 'spelers' ? adminSpelers() : app.atab === 'wijzigingen' ? adminWijzigingen() : adminAanvragen();
+  const tabs = [['aanvragen','Aanvragen'],['indeling','Teamindeling'],['planning','Teams en planning'],['spelers','Spelersregister'],['wijzigingen','Wijzigingen' + (newMut?` (${newMut})`:'')]];
+  const body = app.atab === 'indeling' ? adminIndeling() : app.atab === 'planning' ? adminPlanning() : app.atab === 'spelers' ? adminSpelers() : app.atab === 'wijzigingen' ? adminWijzigingen() : adminAanvragen();
   return `<div class="stack"><div class="seg" role="tablist">${tabs.map(([k,l])=>`<label><input type="radio" name="atab" data-atab="${k}" ${app.atab===k?'checked':''}><span>${esc(l)}</span></label>`).join('')}</div>
     ${app.atab==='aanvragen' && app.note ? `<div class="msg ${app.note.kind}" role="status">${esc(app.note.text)}</div>` : ''}${body}</div>`;
 }
@@ -2006,6 +2022,8 @@ document.addEventListener('input', e=>{
   if(x.bind) d[x.bind] = t.value;
   else if(x.sf){ const s = d.staff.find(y=>y.id===x.sf); if(s){ s[x.sk] = t.value; if(x.sk==='email') t.classList.toggle('bad', badMail(t.value)); } }
   else if(x.p){ const p = d.players.find(y=>y.id===x.p); if(p) p.name = t.value; refreshCount(); }
+  else if(x.ps){ const p = d.players.find(y=>y.id===x.ps); if(p){ (p.self ||= {email:'', phone:''})[x.pk] = t.value; if(x.pk==='email') t.classList.toggle('bad', badMail(t.value)); } }
+  else if(x.msgto){ d.msgTo = x.msgto; save(); render(); return; }
   else if(x.cp){ const p = d.players.find(y=>y.id===x.cp); if(p && p.contacts[+x.ci]){ p.contacts[+x.ci][x.ck] = t.value; if(x.ck==='email') t.classList.toggle('bad', badMail(t.value)); } }
   else if(x.tr != null){ const tr = d.trainings[+x.tr]; if(tr){ tr[x.tk] = x.tk === 'day' ? (t.value === '' ? '' : +t.value) : t.value;
     if((x.tk === 'from' || x.tk === 'to') && t.value){ let n = 0; d.trainings.forEach((o, k) => { if(k !== +x.tr && !o[x.tk]){ o[x.tk] = t.value; n++; } }); if(n){ save(); render(); return; } } } }
@@ -2260,6 +2278,112 @@ document.addEventListener('click', async e => {
   else if(x.wsexport){ exportWS(...x.wsexport.split('|')); }
 });
 
+/* ================= ronde 11: teamindeling klaarzetten ================= */
+Object.assign(app, {ind:null, indMsg:'', prep:{}, mineprep:[], prepSkip:{}});
+const prepId = team => team.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+const XLSX_URL = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+/* Leest de teamindeling (Excel van de club) en geeft per team spelers en staf terug. */
+function parseIndeling(XLSX, buf){
+  const wb = XLSX.read(buf, {type:'array'}), out = [];
+  const clean = s => String(s == null ? '' : s).replace(/ /g, ' ').replace(/\s+/g, ' ').trim();
+  const teamName = h => { const m = /^(M?O)(\d+)(?:-(\d+))?$/i.exec(h); if(!m) return null; const base = m[1].toUpperCase() + m[2]; if(base === 'MO15') return 'VFC MO15-1'; if(base === 'MO20') return 'VFC MO20-1 (9-tal)'; return m[3] ? `VFC ${base}-${m[3]}` : null; };
+  const skip = s => !s || /nieuwe aanmelding|nog in te vullen|nog indelen/i.test(s) || /^\d+$/.test(s);
+  const player = raw => {
+    let s = clean(raw), keeper = /\((k)\)/i.test(s), isNew = /\bnw\b/i.test(s);
+    s = s.replace(/\((k)\)/ig, '').replace(/\bnw\b/ig, '').trim();
+    let first, last;
+    if(s.includes(',')){ const [a, b] = s.split(','); last = clean(a); const parts = clean(b).split(' '); first = parts.shift() || ''; if(parts.length) last = parts.join(' ') + ' ' + last; }
+    else { first = s; last = ''; }
+    return {first: clean(first), last: clean(last), keeper, isNew};
+  };
+  wb.SheetNames.forEach(sn => {
+    const rows = XLSX.utils.sheet_to_json(wb.Sheets[sn], {header:1, raw:false, defval:''}).map(r => r.map(clean));
+    let hr = -1, cols = [];
+    rows.some((r, i) => { const c = r.map((v, j) => [j, teamName(v)]).filter(([, t]) => t); if(c.length){ hr = i; cols = c; return true; } return false; });
+    if(hr < 0) return;
+    cols.forEach(([j, team]) => {
+      const t = {team, sheet:sn, players:[], staff:[]};
+      for(let i = hr + 1; i < rows.length; i++){
+        const v = clean(rows[i][j]); if(skip(v)) continue;
+        const sm = /^(\(?hoofd\)?\s*trainer|trainer|teammanager|temmanager|teammanger)\s*:\s*(.*)$/i.exec(v);
+        if(sm){ const who = clean(sm[2]); if(skip(who)) continue; const role = /hoofd/i.test(sm[1]) ? 'Hoofdtrainer' : /trainer/i.test(sm[1]) ? 'Trainer' : 'Teammanager'; who.split(/\s*[\/,]\s*/).filter(Boolean).forEach(n => t.staff.push({role, name:n})); continue; }
+        if(/:/.test(v)) continue;
+        t.players.push(player(v));
+      }
+      const seen = {}; t.players.forEach(p => { seen[p.first] = (seen[p.first] || 0) + 1; });
+      t.players.forEach(p => { p.name = seen[p.first] > 1 && p.last ? `${p.first} ${p.last.split(' ').pop().charAt(0).toUpperCase()}.` : p.first; });
+      out.push(t);
+    });
+  });
+  return out;
+}
+
+function adminIndeling(){
+  const list = app.ind || Object.values(app.prep).sort((a, b) => ALL_TEAMS.indexOf(a.team) - ALL_TEAMS.indexOf(b.team));
+  const status = t => { const p = app.prep[prepId(t.team)]; if(!p) return '<small>nog niet klaargezet</small>'; if(p.claimedBy) return pillAs('Overgenomen', 'Actief'); return (p.emails || []).length ? pillAs('Klaar voor trainer', 'In behandeling') : '<small>mailadres trainer ontbreekt</small>'; };
+  return `<section class="panel"><div class="panel-head"><h2>Teamindeling</h2><p class="hint">Lees de teamindeling van de club in (Excel). Per team komen de spelers en de staf klaar te staan. Vul het mailadres van de trainer in: logt die in met dat adres, dan staat zijn team al voor hem klaar en vult hij alleen nog de contactpersonen en de taken in.</p></div>
+    <div class="btns"><label class="ghost upl" style="display:inline-flex;align-items:center;gap:8px;cursor:pointer">${icon('export')} Excel-bestand kiezen<input type="file" accept=".xlsx,.xls" data-indfile="1" hidden></label>
+      ${app.ind ? `<button type="button" class="primary" data-indsave="1" ${app.busy ? 'disabled' : ''}>${app.ind.length} teams klaarzetten</button><button type="button" class="link-btn" data-indcancel="1">Annuleren</button>` : ''}
+      ${app.indMsg ? `<span class="status">${esc(app.indMsg)}</span>` : ''}</div>
+    ${list.length ? `<div class="tablewrap"><table class="indt"><thead><tr><th>Team</th><th class="nc">Spelers</th><th>Staf (uit de indeling)</th><th>Mailadres trainer</th><th>Status</th></tr></thead><tbody>
+      ${list.map(t => { const id = prepId(t.team), p = app.prep[id] || {}; return `<tr><td style="white-space:nowrap"><b>${esc(t.team)}</b></td><td class="nc">${t.players.length}${t.players.some(x => x.keeper) ? ` <small>(${t.players.filter(x => x.keeper).length} keeper)</small>` : ''}</td>
+        <td><small>${esc(t.staff.map(x => `${x.name} (${x.role.toLowerCase()})`).join(', ') || '–')}</small></td>
+        <td><input type="email" data-indmail="${esc(id)}" value="${esc((p.emails || []).join(', '))}" placeholder="trainer@voorbeeld.nl" ${app.prep[id] ? '' : 'disabled title="Eerst klaarzetten"'} aria-label="Mailadres trainer ${esc(t.team)}"></td>
+        <td style="white-space:nowrap">${status(t)}</td></tr>`; }).join('')}</tbody></table></div>
+      <p class="hint">Meerdere trainers? Scheid de mailadressen met een komma. Wijzigingen worden direct opgeslagen.</p>` : '<div class="empty">Nog geen teamindeling ingelezen.</div>'}</section>`;
+}
+document.addEventListener('change', async e => {
+  const t = e.target, x = t.dataset;
+  if(x.indfile){
+    const f = t.files && t.files[0]; if(!f) return;
+    app.indMsg = 'Bestand wordt gelezen…'; render();
+    try{ await loadScript(XLSX_URL); const buf = await f.arrayBuffer(); app.ind = parseIndeling(window.XLSX, new Uint8Array(buf)).map(tm => ({team:tm.team, players:tm.players.map(p => ({name:p.name, keeper:!!p.keeper})), staff:dedupStaff(tm.staff)})); app.indMsg = `${app.ind.length} teams gevonden. Controleer en klik op klaarzetten.`; }
+    catch(err){ app.indMsg = 'Dit bestand kon niet gelezen worden.'; }
+    render();
+  }
+  else if(x.indmail){
+    const id = x.indmail, p = app.prep[id]; if(!p || !app.db) return;
+    const emails = t.value.split(/[,;\s]+/).map(v => v.trim().toLowerCase()).filter(v => EMAIL.test(v));
+    try{ await app.db.doc('voorbereid/' + id).update({emails}); app.prep[id] = {...p, emails}; app.indMsg = `Opgeslagen voor ${p.team}.`; }catch(err){ app.indMsg = 'Opslaan is niet gelukt.'; }
+    render();
+  }
+});
+function dedupStaff(list){
+  const out = []; list.forEach(s => { const o = out.find(y => y.name.toLowerCase() === s.name.toLowerCase()); if(o){ if(!o.role.includes(s.role.toLowerCase())) o.role += ' en ' + s.role.toLowerCase(); } else out.push({...s}); });
+  return out;
+}
+document.addEventListener('click', async e => {
+  const b = e.target.closest('button'); if(!b) return; const x = b.dataset;
+  if(x.indcancel){ app.ind = null; app.indMsg = ''; render(); }
+  else if(x.indsave){
+    if(!app.db || !app.ind) return; app.busy = true; render(); let n = 0;
+    try{ for(const tm of app.ind){ const id = prepId(tm.team), old = app.prep[id] || {}; const doc = {team:tm.team, season:'2026/27', players:tm.players, staff:tm.staff, emails:old.emails || [], claimedBy:old.claimedBy || null, at:Date.now()}; await app.db.doc('voorbereid/' + id).set(doc); app.prep[id] = doc; n++; } app.indMsg = `${n} teams klaargezet. Vul nu per team het mailadres van de trainer in.`; app.ind = null; }
+    catch(err){ app.indMsg = `Klaarzetten stopte na ${n} teams. Probeer het opnieuw.`; }
+    app.busy = false; render();
+  }
+  else if(x.claim){ claimPrep(x.claim); }
+  else if(x.claimskip){ app.prepSkip[x.claimskip] = true; render(); }
+});
+async function loadPrepared(){
+  const em = (window.tpUserEmail || '').toLowerCase(); if(!app.db || !em) return;
+  try{ const snap = await app.db.collection('voorbereid').where('emails', 'array-contains', em).get(); app.mineprep = snap.docs.map(d => ({id:d.id, ...clone(d.data() || {})})); render(); }catch(e){}
+}
+function prepBanner(){
+  const mineTeams = new Set(Object.values(app.mine).map(r => r.team));
+  const p = (app.mineprep || []).find(x => !mineTeams.has(x.team) && !app.prepSkip[x.id] && !(app.d && app.d.prepId === x.id));
+  if(!p) return '';
+  return `<div class="prep-banner"><div><b>Je team ${esc(p.team)} staat klaar</b><p>De club heeft ${p.players.length} spelers en de staf al ingevuld. Jij vult alleen nog de contactpersonen en de taken aan.</p></div>
+    <div class="btns"><button type="button" class="primary" data-claim="${esc(p.id)}">Overnemen</button><button type="button" class="link-btn" data-claimskip="${esc(p.id)}">Later</button></div></div>`;
+}
+function claimPrep(id){
+  const p = (app.mineprep || []).find(x => x.id === id); if(!p) return;
+  const d = blank(); d.team = p.team; d.prepId = id; d.msgTo = defaultMsgTo(p.team);
+  d.players = p.players.length ? p.players.map(x => ({...blankPlayer(), name:x.name, keeper:!!x.keeper})) : [blankPlayer()];
+  d.staff = [{id:nid(), role:'Trainer', name:'', email:window.tpUserEmail || '', phone:''}, ...p.staff.map(st => ({id:nid(), role: /teammanager/i.test(st.role) && !/trainer/i.test(st.role) ? 'Teammanager' : 'Trainer', name:st.name, email:''}))];
+  norm(d); app.d = d; app.formOpen = true; app.tab = 'form'; app.step = 0; save(); render(); window.scrollTo({top:0, behavior:'smooth'});
+  if(app.db) app.db.doc('voorbereid/' + id).update({claimedBy:app.uid || 'ja', claimedAt:Date.now()}).catch(() => {});
+}
+
 /* ================= start ================= */
 render();
 (async () => {
@@ -2271,6 +2395,7 @@ render();
   render();
   if(!db || !app.uid) return;
   subDash(app.uid);
+  loadPrepared();
   try{
     const cs = await db.doc(`aanvragen/${app.uid}/concept/current`).get();
     const c = cs.exists ? (cs.data() || {}) : null;
@@ -2286,6 +2411,7 @@ render();
       app.all = []; snap.docs.forEach(doc => { const t = (doc.data() || {}).teams || {}; Object.values(t).forEach(rec => app.all.push({uid:doc.id, rec:norm(clone(rec))})); }); healActive();
       if(app.tab === 'admin') softRender(); else renderTabs();
     }, () => {});
+    db.collection('voorbereid').onSnapshot(snap => { const o = {}; snap.docs.forEach(doc => { o[doc.id] = clone(doc.data() || {}); }); app.prep = o; if(app.tab === 'admin') softRender(); }, () => {});
     db.collection('register').onSnapshot(snap => { const o = {}; snap.docs.forEach(doc => { o[doc.id] = clone(doc.data() || {}); }); app.reg = o; if(app.tab === 'admin') softRender(); }, () => {});
     db.collection('teams').onSnapshot(snap => { const o = {}; snap.docs.forEach(doc => { const t = clone(doc.data() || {}); t.moments = t.moments || []; t.players = t.players || []; o[doc.id] = t; }); app.teams = o; app.teamsLoaded = true; healActive(); if(app.tab === 'admin') softRender(); }, () => {});
   }

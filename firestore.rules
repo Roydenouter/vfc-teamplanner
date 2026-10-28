@@ -13,6 +13,12 @@ service cloud.firestore {
         allow read, write: if isAdmin() || isSelf(uid);
       }
     }
+    match /voorbereid/{id} {
+      allow read: if isAdmin() || (signedIn() && request.auth.token.email in resource.data.emails);
+      allow create, delete: if isAdmin();
+      allow update: if isAdmin() || (signedIn() && request.auth.token.email in resource.data.emails
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['claimedBy', 'claimedAt']));
+    }
     match /register/{id} { allow read, write: if isAdmin(); }
     match /teams/{id} { allow read, write: if isAdmin(); }
   }
