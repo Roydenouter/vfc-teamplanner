@@ -874,7 +874,8 @@ function buildAll(d, season, over){
     const P = per[t], cand = P.order.slice();
     for(let k = 0; k < P.n && cand.length; k++){
       cand.sort((x, y) => P.counts.get(x.id) - P.counts.get(y.id) || total.get(x.id) - total.get(y.id) || P.rank.get(x.id) - P.rank.get(y.id));
-      const p = cand.shift(); r.who.push(p); P.counts.set(p.id, P.counts.get(p.id) + 1); total.set(p.id, total.get(p.id) + 1);
+      const ok = cand.findIndex(c => !(c.pauseUntil && c.pauseUntil >= r.date)); if(ok < 0) break;
+      const p = cand.splice(ok, 1)[0]; r.who.push(p); P.counts.set(p.id, P.counts.get(p.id) + 1); total.set(p.id, total.get(p.id) + 1);
     }
   });
   return per;
@@ -1176,7 +1177,7 @@ const statusPill = s => `<span class="pill st-${String(s).replace(/\s+/g,'-')}">
 const pillAs = (text, cls) => `<span class="pill st-${cls}">${esc(text)}</span>`;
 /* ================= ronde 2: register, planning, wijzigingen ================= */
 const ROSTER_ITEMS = EXTRA.filter(i => i.roster);
-const MUT_TYPES = {nieuw:'Nieuwe speler', weg:'Speler gaat van de club af', wissel:'Speler naar ander team'};
+const MUT_TYPES = {nieuw:'Nieuwe speler', wissel:'Speler naar ander team', pauze:'Tijdelijk niet beschikbaar', weg:'Speler gaat van de club af'};
 const todayISO = () => { const x = new Date(); return `${x.getFullYear()}-${String(x.getMonth()+1).padStart(2,'0')}-${String(x.getDate()).padStart(2,'0')}`; };
 const seasonOf = iso => { const m = /^(\d{4})-(\d{2})/.exec(iso||''); if(!m) return ''; const y = +m[1], mo = +m[2]; return mo >= 7 ? `${y}/${String(y+1).slice(2)}` : `${y-1}/${String(y).slice(2)}`; };
 const emailsOf = p => (p.contacts||[]).map(c => (c.email||'').trim().toLowerCase()).filter(Boolean);
@@ -1261,7 +1262,8 @@ async function generate(key){
     todo.sort((x, y) => x.m.date.localeCompare(y.m.date) || x.k - y.k);
     let added = 0;
     todo.forEach(({i, cfg, n, m}) => {
-      const pool = eligible(team, rec, i.id), who = [];
+      const paused = new Set(team.players.filter(x => { const rp = rec.players.find(y => y.id === x.pid); return rp && rp.pauseUntil && rp.pauseUntil >= m.date; }).map(x => x.reg));
+      const pool = eligible(team, rec, i.id).filter(k => !paused.has(k)), who = [];
       for(let c = 0; c < n && pool.length; c++){
         const score = k => cnt(app.reg[k], i.id).total + (planned[i.id + '|' + k] || 0);
         pool.sort((a,b) => score(a) - score(b) || (week[wk(m.date) + '|' + a] || 0) - (week[wk(m.date) + '|' + b] || 0) || totalAll(a) - totalAll(b) || String(cnt(app.reg[a], i.id).last).localeCompare(String(cnt(app.reg[b], i.id).last)) || order.indexOf(a) - order.indexOf(b));
@@ -1347,14 +1349,17 @@ function viewMine(){
       <div class="seg">${Object.entries(MUT_TYPES).map(([k,l])=>`<label><input type="radio" name="mt" data-mt="${k}" ${app.mutOpen.type===k?'checked':''}><span>${l}</span></label>`).join('')}</div>
       ${app.mutOpen.type === 'nieuw' ? `<div class="row2"><div class="field"><label class="label" for="mu-n">Voornaam speler</label><input type="text" id="mu-n" data-mf="name" value="${esc(app.mutOpen.name||'')}"></div><div class="field"><label class="label" for="mu-c">Voornaam contactpersoon</label><input type="text" id="mu-c" data-mf="contact" value="${esc(app.mutOpen.contact||'')}"></div><div class="field"><label class="label" for="mu-e">Mailadres</label><input type="email" id="mu-e" data-mf="email" value="${esc(app.mutOpen.email||'')}"></div></div>`
         : `<div class="row2"><div class="field"><label class="label" for="mu-p">Speler</label><select id="mu-p" data-mf="pid"><option value="">Kies een speler</option>${ps.map(p=>`<option value="${p.id}" ${app.mutOpen.pid===p.id?'selected':''}>${esc(p.name)}</option>`).join('')}</select></div>
-          ${app.mutOpen.type === 'wissel' ? `<div class="field"><label class="label" for="mu-t">Naar team</label><input type="text" id="mu-t" data-mf="toTeam" value="${esc(app.mutOpen.toTeam||'')}" placeholder="bv. JO11-2"></div>` : ''}</div>`}
-      <p class="hint">${app.mutOpen.type === 'wissel' ? 'De beurten die deze speler al deed, gaan mee naar het nieuwe team. Zo blijft de verdeling eerlijk.' : app.mutOpen.type === 'nieuw' ? 'Een nieuwe speler begint op hetzelfde aantal beurten als wie in het team het minst aan de beurt was, zodat hij niet meteen alles krijgt.' : 'Geplande beurten van deze speler worden vrijgegeven en opnieuw verdeeld.'}</p>
+          ${app.mutOpen.type === 'wissel' ? `<div class="field"><label class="label" for="mu-t">Naar team</label><select id="mu-t" data-mf="toTeam"><option value="">Kies het nieuwe team</option>${ALL_TEAMS.filter(t => t !== r.team).map(t => `<option ${app.mutOpen.toTeam===t?'selected':''}>${esc(t)}</option>`).join('')}</select></div>` : ''}
+          ${app.mutOpen.type === 'pauze' ? `<div class="field"><label class="label" for="mu-u">Niet beschikbaar tot en met</label><input type="date" id="mu-u" data-mf="until" value="${esc(app.mutOpen.until||'')}"></div>` : ''}</div>
+          ${app.mutOpen.type !== 'nieuw' && ps.some(p => p.pauseUntil && p.pauseUntil >= todayISO()) ? `<p class="hint">Nu tijdelijk niet beschikbaar: ${ps.filter(p => p.pauseUntil && p.pauseUntil >= todayISO()).map(p => `${esc(p.name)} t/m ${esc(fmtLong(p.pauseUntil))} <button type="button" class="link-btn" data-unpause="${esc(r.key + '|' + p.id)}">weer beschikbaar</button>`).join(', ')}</p>` : ''}`}
+      <p class="hint">${app.mutOpen.type === 'wissel' ? 'De trainer van het nieuwe team krijgt de speler aangeboden en accepteert hem. De club krijgt bericht. De beurten die deze speler al deed, gaan mee, zodat de verdeling eerlijk blijft.' : app.mutOpen.type === 'pauze' ? 'Bijvoorbeeld bij een lange blessure. De speler blijft in het team, maar krijgt tot en met die datum geen taken. Daarna doet hij vanzelf weer mee.' : app.mutOpen.type === 'nieuw' ? 'Een nieuwe speler begint op hetzelfde aantal beurten als wie in het team het minst aan de beurt was, zodat hij niet meteen alles krijgt.' : 'Geplande beurten van deze speler worden vrijgegeven en opnieuw verdeeld.'}</p>
       ${app.mutOpen.err ? `<p class="errline">${esc(app.mutOpen.err)}</p>` : ''}
       <div class="btns"><button type="button" class="primary" data-mutsend="${esc(r.key)}">Wijziging versturen</button><button type="button" class="ghost" data-mutclose="1">Annuleren</button></div></div>`;
   };
   const muts = recs.flatMap(r => (r.mutaties||[]).map(m => ({r, m}))).sort((a,b)=>b.m.at-a.m.at);
   return `<section class="panel"><div class="panel-head"><h2>Beheer</h2><p class="hint">Hier beheer je team ${esc(recs.map(r => r.team.replace(/^VFC\s*/i, '')).join(', ') || '')}. Je kunt de teamfoto aanpassen of de teamsamenstelling wanneer er een speler bijkomt of vertrekt.</p></div>${intro}
     ${app.note && app.tab==='mine' ? `<div class="msg ${app.note.kind}" role="status">${esc(app.note.text)}</div>` : ''}
+    ${transferBanner()}
     ${recs.length ? `<div class="tablewrap"><table><thead><tr><th>Team</th>${app.owner ? '<th>Laatst verstuurd</th>' : ''}<th class="nc">Spelers</th><th>Status</th><th></th></tr></thead><tbody>
       ${recs.map(r=>`<tr><td><b>${esc(r.team)}</b></td>${app.owner ? `<td>${fmtTime(r.updatedAt)}</td>` : ''}<td class="nc">${plist(r).length}</td><td>${statusPill(r.status)}</td><td><button type="button" class="link-btn" data-load="${esc(r.key)}">Bewerken</button></td></tr>`).join('')}</tbody></table></div>`
       : (app.db && app.uid ? '<div class="empty">Je hebt nog geen team opgevoerd.</div>' : '')}
@@ -1423,12 +1428,14 @@ function adminSpelers(){
       : '<div class="empty">Het register is nog leeg. Spelers komen erin zodra je een team activeert.</div>'}</section>`;
 }
 function adminWijzigingen(){
+  const trs = (app.allTransfers || []).slice().sort((a, b) => b.at - a.at);
+  const trTable = trs.length ? `<div class="group"><span class="label">Overstappen tussen teams</span><div class="tablewrap"><table><thead><tr><th>Speler</th><th>Van</th><th>Naar</th><th>Aangeboden</th><th>Status</th></tr></thead><tbody>${trs.map(t => `<tr><td><b>${esc(t.player.name)}</b></td><td>${esc(t.fromTeam)}</td><td>${esc(t.toTeam)}</td><td>${fmtTime(t.at)}</td><td>${t.status === 'geaccepteerd' ? pillAs('Geaccepteerd', 'Actief') : t.status === 'geweigerd' ? pillAs('Geweigerd', 'Aangepast') : pillAs('Wacht op trainer', 'In behandeling')}</td></tr>`).join('')}</tbody></table></div><p class="hint">Trainers regelen een overstap onderling. Hier zie je ze ter informatie; tellers gaan mee als je bij Wijzigingen of Aanvragen de spelers opnieuw synchroniseert.</p></div>` : '';
   const muts = app.all.flatMap(a => (a.rec.mutaties||[]).map(m => ({a, m}))).sort((x,y) => (x.m.status==='Nieuw'?0:1) - (y.m.status==='Nieuw'?0:1) || y.m.at - x.m.at);
   return `<section class="panel"><div class="panel-head"><h2>Wijzigingen</h2><p class="hint">Doorgegeven door trainers via Beheer. Verwerken past de spelerslijst en het register aan.</p></div>
     ${app.note && app.tab==='admin' ? `<div class="msg ${app.note.kind}" role="status">${esc(app.note.text)}</div>` : ''}
     ${muts.length ? `<div class="tablewrap"><table><thead><tr><th>Team</th><th>Wijziging</th><th>Doorgegeven</th><th>Status</th><th></th></tr></thead><tbody>
       ${muts.map(({a,m}) => `<tr><td>${esc(a.rec.team)}</td><td>${esc(MUT_TYPES[m.type])}: <b>${esc(m.name||m.pname||'')}</b>${m.toTeam?` → ${esc(m.toTeam)}`:''}${m.email?`<br><small>${esc(m.contact||'')} ${esc(m.email)}</small>`:''}</td><td>${fmtTime(m.at)}</td><td>${m.status==='Verwerkt'?pillAs('Verwerkt','Actief'):statusPill('Nieuw')}</td><td>${m.status==='Nieuw'?`<button type="button" class="link-btn" data-mutdo="${esc(a.uid)}|${esc(a.rec.key)}|${esc(m.id)}">Verwerken</button>`:''}</td></tr>`).join('')}</tbody></table></div>`
-      : '<div class="empty">Nog geen wijzigingen doorgegeven.</div>'}</section>`;
+      : '<div class="empty">Nog geen wijzigingen doorgegeven.</div>'}${trTable}</section>`;
 }
 function viewAdmin(){
   const newMut = app.all.reduce((n,a) => n + (a.rec.mutaties||[]).filter(m=>m.status==='Nieuw').length, 0);
@@ -1471,10 +1478,13 @@ document.addEventListener('click', async e => {
     if(m.type === 'nieuw' && !(m.name||'').trim()){ m.err = 'Vul de voornaam van de speler in.'; render(); return; }
     if(m.type === 'nieuw' && badMail(m.email)){ m.err = 'Het mailadres lijkt niet te kloppen.'; render(); return; }
     if(m.type !== 'nieuw' && !m.pid){ m.err = 'Kies een speler.'; render(); return; }
-    if(m.type === 'wissel' && !(m.toTeam||'').trim()){ m.err = 'Vul in naar welk team de speler gaat.'; render(); return; }
+    if(m.type === 'wissel' && !(m.toTeam||'').trim()){ m.err = 'Kies naar welk team de speler gaat.'; render(); return; }
+    if(m.type === 'pauze' && !m.until){ m.err = 'Kies tot wanneer de speler niet beschikbaar is.'; render(); return; }
     const p = r && r.players.find(y => y.id === m.pid);
+    if(m.type === 'pauze'){ const ok = await setPause(m.key, m.pid, m.until); app.note = ok ? {kind:'ok', text:`${p ? p.name : 'De speler'} krijgt tot en met ${fmtLong(m.until)} geen taken.`} : {kind:'warn', text:'Opslaan is niet gelukt. Probeer het opnieuw.'}; if(ok) app.mutOpen = null; render(); return; }
+    if(m.type === 'wissel'){ const res = await offerTransfer(r, p, m.toTeam.trim()); if(res === 'geen'){ app.note = {kind:'warn', text:`${m.toTeam} staat nog niet in de Teamplanner. De club regelt deze overstap.`}; } }
     const ok = await sendMutation(m.key, {type:m.type, name:(m.name||'').trim(), contact:(m.contact||'').trim(), email:(m.email||'').trim(), pid:m.pid||'', pname:p?p.name:'', toTeam:(m.toTeam||'').trim()});
-    app.note = ok ? {kind:'ok', text:'Je wijziging is doorgegeven aan de club.'} : {kind:'warn', text:'Doorgeven is niet gelukt. Probeer het opnieuw.'};
+    if(!(m.type === 'wissel' && app.note)) app.note = ok ? {kind:'ok', text: m.type === 'wissel' ? `${p ? p.name : 'De speler'} is aangeboden aan de trainer van ${m.toTeam}. De club is op de hoogte.` : 'Je wijziging is doorgegeven aan de club.'} : {kind:'warn', text:'Doorgeven is niet gelukt. Probeer het opnieuw.'};
     if(ok) app.mutOpen = null; render();
   }
 });
@@ -1679,7 +1689,7 @@ function viewDash(){
   const subtabs = `<nav class="dtabs" role="tablist" aria-label="Onderdelen teamdashboard"><button type="button" role="tab" class="dtab" data-dsec="voetbal" aria-selected="${sec==='voetbal'}">${icon('ballen')} Voetbalzaken</button><button type="button" role="tab" class="dtab" data-dsec="taken" aria-selected="${sec==='taken'}">${icon('oefenstof')} Team Taken</button><button type="button" role="tab" class="dtab" data-dsec="wissel" aria-selected="${sec==='wissel'}">${icon('wissel')} Wisselschema</button></nav>`;
 
   return `<div class="stack">
-    ${inviteBanner()}${prepBanner()}${sharedNote(list)}
+    ${inviteBanner()}${transferBanner()}${prepBanner()}${sharedNote(list)}
     ${list.length > 1 ? `<div class="field" style="max-width:360px"><label class="label" for="dteam">Team</label><select id="dteam" data-dteam="1">${list.map(t => `<option value="${esc(t.rec.key)}" ${t.rec.key===app.dteam?'selected':''}>${esc(t.rec.team)}</option>`).join('')}</select></div>` : ''}
     ${app.upMsg ? `<p class="hint">${esc(app.upMsg)}</p>` : ''}
     ${hero}${subtabs}${sec === 'taken' ? taken : sec === 'wissel' ? wsTab(rec, dash, uidv) : results}</div>`;
@@ -2747,6 +2757,73 @@ document.addEventListener('change', async e => {
   const st = document.querySelector('.indt + .status, [data-indfile]'); if(st){} 
 });
 
+/* ================= ronde 14: overstap tussen teams en tijdelijk niet beschikbaar ================= */
+async function setPause(key, pid, until){
+  try{ await updateAanvraag(app.uid, key, t => { t.players = t.players.map(x => x.id === pid ? {...x, pauseUntil:until} : x); t.mutaties = [...(t.mutaties || []), {id:'w' + Date.now().toString(36), type:'pauze', pid, pname:(t.players.find(x => x.id === pid) || {}).name || '', until, at:Date.now(), status:'Ter info'}]; }); return true; }
+  catch(e){ return false; }
+}
+/* Teamindex: welk team hoort bij welke trainer, zodat een overstap bij de juiste trainer terechtkomt. */
+async function syncIndex(){
+  if(!app.db || !app.uid) return;
+  for(const rec of Object.values(app.mine)){
+    const id = prepId(rec.team), h = rec.team + '|' + app.uid; if((app.idxHash || {})[id] === h) continue;
+    try{ await app.db.doc('teamindex/' + id).set({team:rec.team, ownerUid:app.uid, key:rec.key, trainer:((rec.staff || [])[0] || {}).name || '', at:Date.now()}); (app.idxHash ||= {})[id] = h; }catch(e){}
+  }
+}
+async function offerTransfer(rec, p, toTeam){
+  if(!app.db || !p) return 'fout';
+  try{
+    const ix = await app.db.doc('teamindex/' + prepId(toTeam)).get(); if(!ix.exists) return 'geen';
+    const to = ix.data() || {}; if(!to.ownerUid) return 'geen';
+    const player = {name:p.name, keeper:!!p.keeper, contacts:(p.contacts || []).map(c => ({name:c.name || '', email:c.email || ''})), ...(p.email ? {email:p.email} : {}), ...(p.phone ? {phone:p.phone} : {})};
+    const id = 't' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5);
+    await app.db.doc('transfers/' + id).set({fromUid:app.uid, fromKey:rec.key, fromTeam:rec.team, fromName:((rec.staff || [])[0] || {}).name || '', pid:p.id, toUid:to.ownerUid, toTeam, player, status:'open', at:Date.now()});
+    return 'ok';
+  }catch(e){ return 'fout'; }
+}
+function watchTransfers(){
+  if(!app.db || !app.uid || app.trWatch) return; app.trWatch = true;
+  try{ app.db.collection('transfers').where('toUid', '==', app.uid).onSnapshot(snap => { app.trIn = snap.docs.map(d => ({id:d.id, ...clone(d.data() || {})})); if(app.tab === 'form' && draftBusy()) renderTabs(); else softRender(); }, () => {}); }catch(e){}
+  try{ app.db.collection('transfers').where('fromUid', '==', app.uid).onSnapshot(snap => { app.trOut = snap.docs.map(d => ({id:d.id, ...clone(d.data() || {})})); finishOut(); }, () => {}); }catch(e){}
+  if(app.owner){ try{ app.db.collection('transfers').onSnapshot(snap => { app.allTransfers = snap.docs.map(d => ({id:d.id, ...clone(d.data() || {})})); if(app.tab === 'admin') softRender(); }, () => {}); }catch(e){} }
+}
+/* Geaccepteerd: bij het oude team staat de speler daarna op "naar ander team". */
+async function finishOut(){
+  for(const t of (app.trOut || [])){
+    if(t.status !== 'geaccepteerd' || t.doneOut) continue;
+    if(!app.mineLoaded) return;
+    const rec = app.mine[t.fromKey]; if(!rec) continue; const pl = rec.players.find(x => x.id === t.pid);
+    try{
+      if(pl && !pl.left) await updateAanvraag(app.uid, t.fromKey, r => { r.players = r.players.map(x => x.id === t.pid ? {...x, left:'wissel', toTeam:t.toTeam, leftAt:todayISO()} : x); });
+      await app.db.doc('transfers/' + t.id).update({doneOut:true}); t.doneOut = true;
+    }catch(e){}
+  }
+}
+function transferBanner(){
+  const open = (app.trIn || []).filter(t => t.status === 'open'); if(!open.length) return '';
+  return open.map(t => `<div class="prep-banner"><div style="flex:1;min-width:240px"><b>${esc(t.player.name)} komt over van ${esc(t.fromTeam)}</b><p>${esc(t.fromName || 'De trainer')} biedt ${esc(t.player.name)} aan voor ${esc(t.toTeam)}${(t.player.contacts || []).some(c => c.email) ? ', met de contactgegevens' : ''}. Accepteer je, dan staat hij meteen in je spelerslijst.</p></div>
+    <div class="btns"><button type="button" class="primary" data-trok="${esc(t.id)}">Accepteren</button><button type="button" class="link-btn" data-trno="${esc(t.id)}">Weigeren</button></div></div>`).join('');
+}
+async function answerTransfer(id, ok){
+  const t = (app.trIn || []).find(x => x.id === id); if(!t || !app.db) return;
+  try{
+    if(ok){
+      const rec = Object.values(app.mine).find(r => r.team === t.toTeam); if(!rec){ app.note = {kind:'warn', text:`Je hebt ${t.toTeam} nog niet in de Teamplanner.`}; render(); return; }
+      await updateAanvraag(app.uid, rec.key, r => { r.players.push({...blankPlayer(), ...clone(t.player), id:nid()}); r.mutaties = [...(r.mutaties || []), {id:'w' + Date.now().toString(36), type:'nieuw', name:t.player.name, from:t.fromTeam, at:Date.now(), status:'Ter info'}]; });
+    }
+    await app.db.doc('transfers/' + id).update({status:ok ? 'geaccepteerd' : 'geweigerd', answeredAt:Date.now()});
+    app.note = {kind:'ok', text: ok ? `${t.player.name} staat nu in ${t.toTeam}.` : `Je hebt de overstap van ${t.player.name} geweigerd. ${t.fromName || 'De trainer'} ziet dat.`};
+  }catch(e){ app.note = {kind:'warn', text:'Dat lukte niet. Probeer het opnieuw.'}; }
+  render();
+}
+document.addEventListener('click', e => {
+  const b = e.target.closest('[data-trok],[data-trno],[data-unpause]'); if(!b) return;
+  const x = b.dataset;
+  if(x.trok) answerTransfer(x.trok, true);
+  else if(x.trno) answerTransfer(x.trno, false);
+  else if(x.unpause){ const [k, pid] = x.unpause.split('|'); setPause(k, pid, '').then(() => { app.note = {kind:'ok', text:'De speler doet weer mee met de taken.'}; render(); }); }
+});
+
 /* ================= start ================= */
 render();
 (async () => {
@@ -2760,6 +2837,7 @@ render();
   subDash(app.uid);
   loadPrepared();
   watchInvites();
+  watchTransfers();
   try{
     const cs = await db.doc(`aanvragen/${app.uid}/concept/current`).get();
     const c = cs.exists ? (cs.data() || {}) : null;
@@ -2769,7 +2847,7 @@ render();
       render();
     }
   }catch(e){}
-  db.doc('aanvragen/' + app.uid).onSnapshot(snap => { app.mine = snap.exists ? clone((snap.data() || {}).teams || {}) : {}; app.mineLoaded = true; autoPrep(); queueSync(); Object.values(app.mine).forEach(norm); if(app.tab !== 'form') softRender(); else { renderTabs(); if(app.tab !== 'form') render(); } }, () => {});
+  db.doc('aanvragen/' + app.uid).onSnapshot(snap => { app.mine = snap.exists ? clone((snap.data() || {}).teams || {}) : {}; app.mineLoaded = true; autoPrep(); queueSync(); syncIndex(); finishOut(); Object.values(app.mine).forEach(norm); if(app.tab !== 'form') softRender(); else { renderTabs(); if(app.tab !== 'form') render(); } }, () => {});
   if(app.owner){
     db.collection('aanvragen').onSnapshot(snap => {
       app.all = []; snap.docs.forEach(doc => { const t = (doc.data() || {}).teams || {}; Object.values(t).forEach(rec => app.all.push({uid:doc.id, rec:norm(clone(rec))})); }); healActive();
