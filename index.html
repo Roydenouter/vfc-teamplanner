@@ -477,6 +477,7 @@ dialog::backdrop{background:var(--shade)}
 .reglegend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:13px;color:var(--muted)}.reglegend .ic{width:16px;height:16px;color:var(--pitch);vertical-align:-3px;margin-right:4px}
 .sync-note{display:flex;gap:6px;align-items:flex-start;margin:4px 0 0;font-size:12px;color:var(--muted)}.sync-note .ic{width:14px;height:14px;flex:none;margin-top:2px;opacity:.7}
 .prep-banner{display:flex;gap:14px;align-items:center;justify-content:space-between;flex-wrap:wrap;border:1px solid var(--pitch);background:var(--pitch-soft);border-radius:12px;padding:14px 16px}
+.prep-list{list-style:none;margin:10px 0 0;padding:0;display:grid;gap:6px}.prep-list li{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;padding:8px 10px;border-radius:8px;background:var(--surface)}.prep-list small{color:var(--muted)}
 .prep-banner b{font-size:16px}.prep-banner p{margin:2px 0 0;color:var(--muted)}
 .indt td,.indt th{padding:8px 10px;vertical-align:top}.indt input{min-width:220px}
 .indt small{color:var(--muted)}
@@ -2399,6 +2400,7 @@ function adminIndeling(){
     <div class="btns"><label class="ghost upl" style="display:inline-flex;align-items:center;gap:8px;cursor:pointer">${icon('export')} Excel-bestand kiezen<input type="file" accept=".xlsx,.xls" data-indfile="1" hidden></label>
       ${app.ind ? `<button type="button" class="primary" data-indsave="1" ${app.busy ? 'disabled' : ''}>${app.ind.length} teams klaarzetten</button><button type="button" class="link-btn" data-indcancel="1">Annuleren</button>` : ''}
       ${app.indMsg ? `<span class="status">${esc(app.indMsg)}</span>` : ''}</div>
+    ${indSugBox()}
     ${list.length ? `<div class="tablewrap"><table class="indt"><thead><tr><th>Team</th><th class="nc">Spelers</th><th>Staf (uit de indeling)</th><th>Mailadres trainer</th><th>Status</th></tr></thead><tbody>
       ${list.map(t => { const id = prepId(t.team), p = app.prep[id] || {}; return `<tr><td style="white-space:nowrap"><b>${esc(t.team)}</b></td><td class="nc">${t.players.length}${t.players.some(x => x.keeper) ? ` <small>(${t.players.filter(x => x.keeper).length} keeper)</small>` : ''}</td>
         <td><small>${esc(t.staff.map(x => `${x.name} (${x.role.toLowerCase()})`).join(', ') || '–')}</small></td>
@@ -2418,9 +2420,39 @@ document.addEventListener('change', async e => {
   else if(x.indmail){
     const id = x.indmail, p = app.prep[id]; if(!p || !app.db) return;
     const emails = t.value.split(/[,;\s]+/).map(v => v.trim().toLowerCase()).filter(v => EMAIL.test(v));
-    try{ await app.db.doc('voorbereid/' + id).update({emails}); app.prep[id] = {...p, emails}; app.indMsg = `Opgeslagen voor ${p.team}.`; }catch(err){ app.indMsg = 'Opslaan is niet gelukt.'; }
+    try{ await app.db.doc('voorbereid/' + id).update({emails}); app.prep[id] = {...p, emails}; app.indMsg = `Opgeslagen voor ${p.team}.`; app.indSug = indSuggest(id, emails); }catch(err){ app.indMsg = 'Opslaan is niet gelukt.'; }
     render();
   }
+});
+/* Zelfde stafnaam bij andere teams: voorstel om hetzelfde mailadres daar ook te zetten. Alleen een voorstel, want voornamen kunnen dubbel zijn. */
+function indSuggest(id, emails){
+  const p = app.prep[id]; if(!p || !emails.length) return null;
+  const names = new Set((p.staff || []).map(x => (x.name || '').trim().toLowerCase()).filter(Boolean));
+  const hits = Object.entries(app.prep).filter(([k, q]) => k !== id && (q.staff || []).some(x => names.has((x.name || '').trim().toLowerCase())) && emails.some(e => !(q.emails || []).includes(e)))
+    .map(([k, q]) => ({id:k, team:q.team, name:(q.staff.find(x => names.has((x.name || '').trim().toLowerCase())) || {}).name}))
+    .sort((a, b) => ALL_TEAMS.indexOf(a.team) - ALL_TEAMS.indexOf(b.team));
+  return hits.length ? {emails, hits} : null;
+}
+function indSugBox(){
+  const g = app.indSug; if(!g || !g.hits.length) return '';
+  return `<div class="prep-banner" style="margin-top:12px"><div style="flex:1;min-width:240px"><b>Is dit dezelfde trainer?</b><p>${esc(g.emails.join(', '))} hoort nu bij één team. Dezelfde naam staat ook bij:</p>
+    <ul class="prep-list">${g.hits.map(h => `<li><span><b>${esc(h.team)}</b> <small>${esc(h.name)}</small></span><button type="button" class="ghost" data-indsug="${esc(h.id)}">Ook hier invullen</button></li>`).join('')}</ul>
+    <div class="btns" style="margin-top:8px">${g.hits.length > 1 ? `<button type="button" class="primary" data-indsug="*">Bij alle ${g.hits.length} invullen</button>` : ''}<button type="button" class="link-btn" data-indsugno="1">Nee, andere persoon</button></div></div></div>`;
+}
+async function applyIndSug(which){
+  const g = app.indSug; if(!g || !app.db) return;
+  const ids = which === '*' ? g.hits.map(h => h.id) : [which];
+  for(const k of ids){
+    const q = app.prep[k]; if(!q) continue;
+    const emails = [...new Set([...(q.emails || []), ...g.emails])];
+    try{ await app.db.doc('voorbereid/' + k).update({emails}); app.prep[k] = {...q, emails}; }catch(e){ app.indMsg = 'Opslaan is niet gelukt.'; }
+  }
+  g.hits = g.hits.filter(h => !ids.includes(h.id)); if(!g.hits.length) app.indSug = null;
+  app.indMsg = `Mailadres ook gezet bij ${ids.map(k => (app.prep[k] || {}).team).join(', ')}.`; render();
+}
+document.addEventListener('click', e => {
+  const b = e.target.closest('[data-indsug],[data-indsugno]'); if(!b) return;
+  if(b.dataset.indsugno){ app.indSug = null; render(); } else applyIndSug(b.dataset.indsug);
 });
 function dedupStaff(list){
   const out = []; list.forEach(s => { const o = out.find(y => y.name.toLowerCase() === s.name.toLowerCase()); if(o){ if(!o.role.includes(s.role.toLowerCase())) o.role += ' en ' + s.role.toLowerCase(); } else out.push({...s}); });
@@ -2440,14 +2472,34 @@ document.addEventListener('click', async e => {
 });
 async function loadPrepared(){
   const em = (window.tpUserEmail || '').toLowerCase(); if(!app.db || !em) return;
-  try{ const snap = await app.db.collection('voorbereid').where('emails', 'array-contains', em).get(); app.mineprep = snap.docs.map(d => ({id:d.id, ...clone(d.data() || {})})); render(); }catch(e){}
+  try{ const snap = await app.db.collection('voorbereid').where('emails', 'array-contains', em).get(); app.mineprep = snap.docs.map(d => ({id:d.id, ...clone(d.data() || {})})).sort((x, y) => ALL_TEAMS.indexOf(x.team) - ALL_TEAMS.indexOf(y.team)); autoPrep(); render(); }catch(e){}
+}
+/* Teams die de club voor dit mailadres heeft klaargezet en die de trainer nog niet heeft verstuurd. */
+function openPrep(){
+  const mineTeams = new Set(Object.values(app.mine).map(r => r.team));
+  return (app.mineprep || []).filter(x => !mineTeams.has(x.team));
+}
+const draftBusy = () => app.d && (((app.d.team || '').trim()) || app.d.players.some(p => (p.name || '').trim())) && !app.mine[app.d.key];
+/* Eerste keer inloggen zonder team en zonder concept: het eerste klaargezette team gaat meteen open. */
+function autoPrep(){
+  if(app.prepAuto || !app.mineLoaded || !app.mineprep) return;
+  app.prepAuto = true;
+  const open = openPrep();
+  if(open.length && !Object.keys(app.mine).length && !draftBusy()) claimPrep(open[0].id);
 }
 function prepBanner(){
-  const mineTeams = new Set(Object.values(app.mine).map(r => r.team));
-  const p = (app.mineprep || []).find(x => !mineTeams.has(x.team) && !app.prepSkip[x.id] && !(app.d && app.d.prepId === x.id));
-  if(!p) return '';
-  return `<div class="prep-banner"><div><b>Je team ${esc(p.team)} staat klaar</b><p>De club heeft ${p.players.length} spelers en de staf al ingevuld. Jij vult alleen nog de contactpersonen en de taken aan.</p></div>
-    <div class="btns"><button type="button" class="primary" data-claim="${esc(p.id)}">Overnemen</button><button type="button" class="link-btn" data-claimskip="${esc(p.id)}">Later</button></div></div>`;
+  const open = openPrep(); if(!open.length) return '';
+  const cur = app.d && app.d.prepId, curTeam = draftBusy() ? (app.d.team || '').trim() : '';
+  const rows = open.map(p => {
+    const isCur = cur === p.id;
+    const act = isCur ? '<span class="pill">Nu aan het invullen</span>'
+      : curTeam ? `<small>Na het versturen van ${esc(curTeam)}</small>`
+      : `<button type="button" class="primary" data-claim="${esc(p.id)}">Invullen</button>`;
+    return `<li><span><b>${esc(p.team)}</b> <small>${p.players.length} spelers${p.staff.length ? ' · ' + esc(p.staff.map(x => x.name).join(', ')) : ''}</small></span>${act}</li>`;
+  }).join('');
+  const one = open.length === 1;
+  return `<div class="prep-banner"><div style="flex:1;min-width:240px"><b>${one ? 'Je team staat klaar' : `Je ${open.length} teams staan klaar`}</b><p>De club heeft de spelers en de staf al ingevuld. Jij vult per team de contactpersonen, mailadressen, telefoonnummers en taken aan en verstuurt het.</p>
+    <ul class="prep-list">${rows}</ul></div></div>`;
 }
 function claimPrep(id){
   const p = (app.mineprep || []).find(x => x.id === id); if(!p) return;
@@ -2588,7 +2640,7 @@ render();
       render();
     }
   }catch(e){}
-  db.doc('aanvragen/' + app.uid).onSnapshot(snap => { app.mine = snap.exists ? clone((snap.data() || {}).teams || {}) : {}; Object.values(app.mine).forEach(norm); if(app.tab !== 'form') softRender(); else { renderTabs(); if(app.tab !== 'form') render(); } }, () => {});
+  db.doc('aanvragen/' + app.uid).onSnapshot(snap => { app.mine = snap.exists ? clone((snap.data() || {}).teams || {}) : {}; app.mineLoaded = true; autoPrep(); Object.values(app.mine).forEach(norm); if(app.tab !== 'form') softRender(); else { renderTabs(); if(app.tab !== 'form') render(); } }, () => {});
   if(app.owner){
     db.collection('aanvragen').onSnapshot(snap => {
       app.all = []; snap.docs.forEach(doc => { const t = (doc.data() || {}).teams || {}; Object.values(t).forEach(rec => app.all.push({uid:doc.id, rec:norm(clone(rec))})); }); healActive();
