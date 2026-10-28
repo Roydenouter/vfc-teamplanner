@@ -2924,6 +2924,7 @@
 #vfcBar button.on{background:#d9b44a;border-color:#d9b44a;color:#14140f}
 #vfcBar .sep{width:1px;height:18px;background:rgba(255,255,255,.18);margin:0 2px}
 body.vfc-calm .ui-hide-on-focus,body.vfc-calm .ui-hide-bottom-on-focus{display:none!important}
+body:not(.vfc-calm) #vfcBar{top:68px;bottom:auto}
 body.focus-mode #vfcBar{bottom:8px;opacity:.55}body.focus-mode #vfcBar:hover{opacity:1}
 </style>
 <div id="vfcBar" style="display:none"></div>
@@ -2991,11 +2992,11 @@ body.focus-mode #vfcBar{bottom:8px;opacity:.55}body.focus-mode #vfcBar:hover{opa
     /* rustige start: geen driehoeken, tegenstanders en looplijnen */
     showTriangles = false; showOpponents = false; showPaths = false;
     ['btnToggleTriangles','btnToggleOpponents','btnTogglePaths'].forEach(id => { const x = document.getElementById(id); if(x) x.classList.remove('icon-toggle-active'); });
-    currentFormat = fmt; currentScenario = 'formatie';
-    document.querySelectorAll('.format-tab').forEach(btn => btn.classList.toggle('format-pill-active', btn.dataset.format === fmt));
-    document.querySelectorAll('.scenario-btn').forEach(btn => btn.classList.toggle('scenario-pill-active', btn.dataset.scenario === 'formatie'));
     document.body.classList.add('vfc-calm');
     if(prev) prev();
+    currentScenario = 'formatie';
+    document.querySelectorAll('.scenario-btn').forEach(btn => btn.classList.toggle('scenario-pill-active', btn.dataset.scenario === 'formatie'));
+    selectFormat(fmt);
     loadTeam(); resizeCanvas(); bar();
     if(typeof toggleCoachCardCollapse === 'function' && !isCoachCardCollapsed) toggleCoachCardCollapse();
   };
