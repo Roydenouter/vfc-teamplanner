@@ -1973,6 +1973,7 @@ function openDialog(id, fromCheck){
   document.getElementById('dlgIntro').textContent = dItem.intro;
   renderDialog();
   if(typeof dlg.showModal === 'function') dlg.showModal(); else dlg.setAttribute('open','');
+  const db0 = document.getElementById('dlgBody'); if(db0) db0.scrollTop = 0; requestAnimationFrame(() => { if(db0) db0.scrollTop = 0; });
 }
 const dayCount = (f, t) => Math.round((toUTC(t) - toUTC(f)) / 864e5) + 1;
 const seasonSum = x => { if(!/^\d{4}-/.test(x.start || '') || !/^\d{4}-/.test(x.end || '')) return 'Kies beide data.'; const d = dayCount(x.start, x.end); return d < 1 ? 'Let op: "tot en met" ligt vóór "vanaf".' : `${fmtLong(x.start)} t/m ${fmtLong(x.end)} · ongeveer ${Math.round(d / 7)} weken`; };
