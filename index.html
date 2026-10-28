@@ -1671,8 +1671,9 @@ function viewDash(){
       ${top.length ? `<ol class="tops">${top.map(([p,n],k) => `<li><i style="width:${(n/top[0][1]*100).toFixed(0)}%"></i><span class="rk">${k+1}</span><span>${esc(pname(p))}</span><b>${n}</b></li>`).join('')}</ol>` : '<p class="hint">Komt vanzelf zodra je bij een uitslag de doelpuntenmakers aantikt.</p>'}</div>`;
   const rest = upcoming.slice(3);
   const progCard = `<div class="card"><div class="kind">Voetbalprogramma</div>${rest.length ? `<ul class="proglist">${rest.map(m => `<li><button type="button" class="pl-row${app.open.mcard === m.id ? ' sel' : ''}" data-mcard="${esc(m.id)}"><span class="pl-d">${fmt(m.date)}</span><span class="pl-tm">${esc(m.time||'')}</span><b class="pl-h">${sideName(m, true)}</b><small class="pl-x">vs</small><b class="pl-a">${sideName(m, false)}</b></button></li>`).join('')}</ul>` : '<p class="hint">Alle bekende wedstrijden staan bovenaan. Nieuwe wedstrijden komen hier vanzelf bij.</p>'}</div>`;
+  const rulesTile = cat && cat.rules ? `<a class="tile-link" href="${cat.rules}" target="_blank" rel="noopener"><span class="tl-ic">${icon('oefenstof')}</span><span><b>Spelregels ${esc(cat.label)}</b><small>${esc(cat.desc)} · KNVB</small></span><span class="tl-go">↗</span></a>` : '';
   const results = `<div class="dquad">${cat && cat.stand ? resCard + standHTML(rec, dash, uidv) + progCard + topCard : resCard + topCard + `<div class="span2">${progCard}</div>`}</div>
-  ${cat && cat.rules ? `<a class="tile-link" href="${cat.rules}" target="_blank" rel="noopener"><span class="tl-ic">${icon('oefenstof')}</span><span><b>Spelregels ${esc(cat.label)}</b><small>${esc(cat.desc)} · KNVB</small></span><span class="tl-go">↗</span></a>` : ''}`;
+  ${rulesTile && !bigField(rec.team) ? rulesTile : ''}`;
 
   /* taken */
   const td = taskData(rec, dash);
@@ -1703,7 +1704,7 @@ function viewDash(){
     ${inviteBanner()}${transferBanner()}${prepBanner()}${sharedNote(list)}
     ${list.length > 1 ? `<div class="field" style="max-width:360px"><label class="label" for="dteam">Team</label><select id="dteam" data-dteam="1">${list.map(t => `<option value="${esc(t.rec.key)}" ${t.rec.key===app.dteam?'selected':''}>${esc(t.rec.team)}</option>`).join('')}</select></div>` : ''}
     ${app.upMsg ? `<p class="hint">${esc(app.upMsg)}</p>` : ''}
-    ${hero}${subtabs}${sec === 'taken' ? taken : sec === 'wissel' ? wsTab(rec, dash, uidv) : sec === 'opstelling' ? lineupCard(rec, dash, uidv) : results}</div>`;
+    ${hero}${subtabs}${sec === 'taken' ? taken : sec === 'wissel' ? wsTab(rec, dash, uidv) : sec === 'opstelling' ? lineupCard(rec, dash, uidv) + rulesTile : results}</div>`;
 }
 
 /* ---------- gebeurtenissen ---------- */
