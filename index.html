@@ -2520,7 +2520,7 @@ function prepBanner(){
   const rows = open.map(p => {
     const isCur = cur === p.id;
     const act = isCur ? '<span class="pill">Nu aan het invullen</span>'
-      : curTeam ? `<small>Na het versturen van ${esc(curTeam)}</small>`
+      : curTeam && curTeam !== p.team ? `<small>Na het versturen van ${esc(curTeam)}</small>`
       : `<button type="button" class="primary" data-claim="${esc(p.id)}">Invullen</button>`;
     return `<li><span><b>${esc(p.team)}</b> <small>${p.players.length} spelers${p.staff.length ? ' · ' + esc(p.staff.map(x => x.name).join(', ')) : ''}</small></span>${act}</li>`;
   }).join('');
