@@ -2430,7 +2430,7 @@ function adminIndeling(){
     ${list.length ? `<div class="tablewrap"><table class="indt"><thead><tr><th>Team</th><th class="nc">Spelers</th><th>Staf (uit de indeling)</th><th>Mailadres trainer</th><th>Status</th></tr></thead><tbody>
       ${list.map(t => { const id = prepId(t.team), p = app.prep[id] || {}; return `<tr><td style="white-space:nowrap"><b>${esc(t.team)}</b></td><td class="nc">${t.players.length}${t.players.some(x => x.keeper) ? ` <small>(${t.players.filter(x => x.keeper).length} keeper)</small>` : ''}</td>
         <td><small>${esc(t.staff.map(x => `${x.name} (${x.role.toLowerCase()})`).join(', ') || '–')}</small></td>
-        <td><input type="email" data-indmail="${esc(id)}" value="${esc((p.emails || []).join(', '))}" placeholder="trainer@voorbeeld.nl" ${app.prep[id] ? '' : 'disabled title="Eerst klaarzetten"'} aria-label="Mailadres trainer ${esc(t.team)}"></td>
+        <td><input type="email" data-indmail="${esc(id)}" value="${esc((p.emails || []).join(', '))}" placeholder="trainer@voorbeeld.nl" ${app.prep[id] ? '' : 'disabled title="Eerst klaarzetten"'} aria-label="Mailadres trainer ${esc(t.team)}">${app.prep[id] ? `<button type="button" class="link-btn" data-indmailsave="${esc(id)}" style="margin-top:4px">${(p.emails || []).length ? 'Opgeslagen ✓' : 'Opslaan'}</button>` : ''}</td>
         <td style="white-space:nowrap">${status(t)}${app.prep[id] && !app.prep[id].claimedBy ? `<br><button type="button" class="link-btn" data-indc="${esc(id)}">${app.indOpen === id ? 'Sluiten' : 'Contacten'}</button>` : ''}</td></tr>
         ${app.indOpen === id && app.prep[id] ? indContacts(id) : ''}`; }).join('')}</tbody></table></div>
       <p class="hint">Meerdere trainers? Scheid de mailadressen met een komma. Wijzigingen worden direct opgeslagen.</p>` : '<div class="empty">Nog geen teamindeling ingelezen.</div>'}</section>`;
@@ -2746,6 +2746,7 @@ function indContacts(id){
 }
 document.addEventListener('click', e => {
   if(e.target.closest('[data-ownform]')){ app.formOpen = true; render(); return; }
+  const ims = e.target.closest('[data-indmailsave]'); if(ims){ const inp = document.querySelector(`[data-indmail="${ims.dataset.indmailsave}"]`); if(inp) inp.dispatchEvent(new Event('change', {bubbles:true})); return; }
   const b = e.target.closest('[data-invok],[data-invno],[data-teamdel],[data-teamdelok],[data-teamdelno],[data-indc]'); if(!b) return;
   const x = b.dataset;
   if(x.invok) answerInvite(x.invok, true);
