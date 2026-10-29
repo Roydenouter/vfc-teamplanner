@@ -707,6 +707,10 @@ const ITEMS = [
    intro:'Bij thuiswedstrijden begeleidt iemand het spel. De naam van de speler staat bij de wedstrijd.',
    roster:{unit:'wedstrijd', unitPl:'thuiswedstrijden', per:'wedstrijd', days:[6], time:'', count:1, which:'thuis'}, fields:[],
    steps:[ROSTER_STEP,S('Naam staat bij de wedstrijd in de agenda','auto'),S('Herinnering een paar dagen vooraf','auto'),S('Kan het niet? Ruilen en doorgeven','ouder')]},
+  {id:'vlaggen', title:'Vlaggen', short:'Assistent-scheidsrechter langs de lijn',
+   intro:'Bij elke wedstrijd vlagt een ouder langs de lijn. Kies of dat bij alle wedstrijden is of alleen thuis of uit. De naam van de speler staat bij de wedstrijd.',
+   roster:{unit:'wedstrijd', unitPl:'wedstrijden', per:'wedstrijd', days:[6], time:'', count:1, which:'thuis'}, fields:[],
+   steps:[ROSTER_STEP,S('Naam staat bij de wedstrijd in de agenda','auto'),S('Herinnering een paar dagen vooraf','auto'),S('Kan het niet? Ruilen en doorgeven','ouder')]},
   {id:'siroop', title:'Siroopkannen', short:'Bij thuiswedstrijden',
    intro:'Bij thuiswedstrijden zorgt iemand om de beurt voor de kannen siroop.',
    roster:{unit:'wedstrijd', unitPl:'thuiswedstrijden', per:'wedstrijd', days:[6], time:'', count:1, which:'thuis'},
@@ -998,6 +1002,7 @@ function automationHTML(d){
   if(on('begeleiding')) ev.push({day:1, ic:'bell', text:'Herinnering aan wie deze week de training begeleidt', who:'auto', sort:'00'});
   if(on('oefenstof')) ev.push({day:1, ic:'oefenstof', text:'Oefenstof van de week bij de trainingen in de agenda', who:'auto', sort:'01'});
   if(on('spelbegeleider')) ev.push({day:3, ic:'spelbegeleider', text:'Herinnering spelbegeleider (thuiswedstrijd)', who:'auto', sort:'02'});
+  if(on('vlaggen')) ev.push({day:3, ic:'vlaggen', text:'Herinnering vlaggen', who:'auto', sort:'02b'});
   const attTo = attList(d).map(id => staffById(d, id)).filter(Boolean).map(staffLabel);
   const mt = msgToOf(d), wieAlle = mt === 'speler' ? 'Alle spelers' : mt === 'beide' ? 'Alle spelers en hun ouders/verzorgers' : 'Alle ouders/verzorgers';
   ev.push({day:4, ic:'mail', time:'18:00', text:`${wieAlle} krijgen de wedstrijdinformatie: aftrap, verzamelen, veld en kleedkamer, bij uit het adres met een link voor de route. Met de vraag of ${mt === 'ouders' ? 'hun kind er is' : mt === 'speler' ? 'ze er zijn' : 'de speler er is'}.`, who:'auto', sort:'18:00'});
@@ -1022,7 +1027,7 @@ function automationHTML(d){
     ['club',`Mededeling van de club: komt per mail bij ${wieAlle.toLowerCase()}.`, 'mail']
   ];
   if(on('bardienst')){ const n = d.cfg.bardienst.dates.filter(Boolean).length; always.push(['auto', `Bardienst: herinnering een week voor elke dienst (${n} ${n===1?'dienst':'diensten'}).`, 'bardienst']); }
-  if(['begeleiding','shirts','ballen','siroop','rijden','spelbegeleider'].some(on)) always.push(['ouder','Kan iemand niet? Onderling ruilen en doorgeven; de agenda en de herinnering gaan mee met de nieuwe naam.', 'wissel']);
+  if(['begeleiding','shirts','ballen','siroop','rijden','spelbegeleider','vlaggen'].some(on)) always.push(['ouder','Kan iemand niet? Onderling ruilen en doorgeven; de agenda en de herinnering gaan mee met de nieuwe naam.', 'wissel']);
   return `<article class="card">
     <div class="card-head"><div><div class="kind">Zo loopt een gewone week</div><h3>Wat er voor jullie automatisch gebeurt</h3><p>Zo ziet een gewone week eruit. Geel gaat vanzelf, bij de andere kleuren doet iemand iets.</p></div></div>
     <div class="legend"><span class="tag auto">Automatisch</span><span class="tag team">Team</span><span class="tag ouder">Ouders</span><span class="tag club">Club</span></div>
@@ -1529,6 +1534,7 @@ const ICONS = {
   ballen:'<circle cx="12" cy="12" r="9"/><path d="m12 7 4 3-1.5 5h-5L8 10z"/>',
   rijden:'<path d="M3 13l2-5h14l2 5v4h-2"/><path d="M7 17H5v-4M9 17h6"/><circle cx="7" cy="17" r="2"/><circle cx="17" cy="17" r="2"/>',
   spelbegeleider:'<path d="M5 21V4h11l-2 4 2 4H5"/>',
+  vlaggen:'<path d="M7 21V3"/><path d="M7 4h11v7H7"/><path d="M7 4l11 7M18 4L7 11"/>',
   siroop:'<path d="M6 4h10v14a3 3 0 0 1-3 3H9a3 3 0 0 1-3-3z"/><path d="M16 8h2a2 2 0 0 1 0 4h-2M6 9h10"/>',
   bardienst:'<path d="M7 3h10l-1 8a4 4 0 0 1-8 0zM12 15v6M8 21h8"/>',
   pitch:'<rect x="3" y="5" width="18" height="14" rx="1.5"/><path d="M12 5v14"/><circle cx="12" cy="12" r="2.5"/>',
@@ -1698,7 +1704,7 @@ function viewDash(){
 
   /* taken */
   const td = taskData(rec, dash);
-  const verb = {begeleiding:'begeleidt de training', shirts:'wast de shirts', ballen:'neemt de ballen mee', rijden:'rijdt', spelbegeleider:'is spelbegeleider', siroop:'zorgt voor de siroop', bardienst:'staat achter de bar'};
+  const verb = {begeleiding:'begeleidt de training', shirts:'wast de shirts', ballen:'neemt de ballen mee', rijden:'rijdt', spelbegeleider:'is spelbegeleider', vlaggen:'vlagt', siroop:'zorgt voor de siroop', bardienst:'staat achter de bar'};
   const tasksHTML = td.tasks.length ? (() => {
     const t0 = toUTC(today), dow = (new Date(t0).getUTCDay() + 6) % 7, mon = t0 - dow * 864e5;
     const inWeek = (m, w) => { const t = toUTC(m.date); return t >= mon + w * 7 * 864e5 && t < mon + (w + 1) * 7 * 864e5; };
@@ -2226,7 +2232,7 @@ async function exportPDF(uidv, key){
   app.expMsg = 'Pdf wordt gemaakt…'; render();
   const rec = t.rec, dash = app.dash[key] || {}, td = taskData(rec, dash), today = todayISO();
   const ps = plist(rec), pname = id => (rec.players.find(p => p.id === id) || {}).name || '–';
-  const VERB = {begeleiding:'begeleidt de training', shirts:'wast de shirts', ballen:'neemt de ballen mee', rijden:'rijdt', spelbegeleider:'is spelbegeleider', siroop:'zorgt voor de siroop', bardienst:'staat achter de bar'};
+  const VERB = {begeleiding:'begeleidt de training', shirts:'wast de shirts', ballen:'neemt de ballen mee', rijden:'rijdt', spelbegeleider:'is spelbegeleider', vlaggen:'vlagt', siroop:'zorgt voor de siroop', bardienst:'staat achter de bar'};
   const ic = (id, col, sz) => `<svg width="${sz||20}" height="${sz||20}" viewBox="0 0 24 24" fill="none" stroke="${col}" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${ICONS[id]||''}</svg>`;
   const C = {ink:'#1f1d17', muted:'#686252', line:'#e0dccf', pitch:'#7d620f', soft:'#f5efdc', team:'#1f5a8a', teamBg:'#e2edf6', dark:'#1b1a15', gold:'#d6b54e'};
   const t0 = toUTC(today), dow = (new Date(t0).getUTCDay() + 6) % 7, mon = t0 - dow * 864e5;
@@ -2587,7 +2593,7 @@ function claimPrep(id){
   const local = (window.tpUserEmail || '').toLowerCase().split('@')[0], roleOf = st => /teammanager/i.test(st.role) && !/trainer/i.test(st.role) ? 'Teammanager' : 'Trainer';
   const meIx = p.staff.findIndex(st => st.name && st.name.length > 2 && local.includes(st.name.toLowerCase()));
   const meSt = meIx >= 0 ? p.staff[meIx] : null;
-  d.staff = [{id:nid(), role:meSt ? roleOf(meSt) : 'Trainer', name:meSt ? meSt.name : '', email:window.tpUserEmail || '', phone:''}, ...p.staff.filter((st, k) => k !== meIx).map(st => ({id:nid(), role:roleOf(st), name:st.name, email:''}))];
+  d.staff = [{id:nid(), role:meSt ? roleOf(meSt) : 'Trainer', name:meSt ? meSt.name : '', email:window.tpUserEmail || '', phone:''}, ...p.staff.filter((st, k) => k !== meIx).map(st => ({id:nid(), role:roleOf(st), name:st.name, email:st.email || ''}))];
   norm(d); app.d = d; app.formOpen = true; app.tab = 'form'; app.step = 0; save(); render(); window.scrollTo({top:0, behavior:'smooth'});
   if(app.db) app.db.doc('voorbereid/' + id).update({claimedBy:app.uid || 'ja', claimedAt:Date.now()}).catch(() => {});
 }
@@ -2839,7 +2845,8 @@ async function deleteTeam(uidv, key){
 /* Clubbeheer: contactpersonen alvast klaarzetten bij een klaargezet team. */
 function indContacts(id){
   const p = app.prep[id];
-  return `<tr class="indc"><td colspan="5"><div class="group"><p class="hint">Vul in wat de club al weet. De trainer ziet het straks bij Spelers en vult de rest aan. Wordt direct opgeslagen.</p>
+  return `<tr class="indc"><td colspan="5"><div class="group"><p class="hint">Vul in wat de club al weet. De trainer ziet het straks bij Team en Spelers en vult de rest aan. Wordt direct opgeslagen.</p>
+    ${(p.staff || []).length ? `<div class="tablewrap"><table><thead><tr><th>Staf</th><th>Rol</th><th>Mailadres</th></tr></thead><tbody>${p.staff.map((x, k) => `<tr><td><b>${esc(x.name)}</b></td><td>${esc(x.role)}</td><td><input type="email" value="${esc(x.email || '')}" placeholder="mailadres" data-indst="${esc(id)}|${k}" aria-label="Mailadres ${esc(x.name)}"></td></tr>`).join('')}</tbody></table></div><p class="hint" style="margin:0">Na het versturen van het team krijgen zij een uitnodiging om mee te kijken.</p>` : ''}
     <div class="tablewrap"><table><thead><tr><th>Speler</th><th>Contactpersoon</th><th>Mailadres</th></tr></thead><tbody>
     ${p.players.map((x, k) => { const c = (x.contacts || [])[0] || {}; return `<tr><td><b>${esc(x.name)}</b></td>
       <td><input type="text" value="${esc(c.name || '')}" placeholder="voornaam" data-indcp="${esc(id)}|${k}|name" aria-label="Contactpersoon ${esc(x.name)}"></td>
@@ -2857,6 +2864,12 @@ document.addEventListener('click', e => {
   else if(x.teamdelno){ app.delAsk = null; render(); }
   else if(x.teamdelok){ const [u, k] = x.teamdelok.split('/'); deleteTeam(u, k); }
   else if(x.indc){ app.indOpen = app.indOpen === x.indc ? null : x.indc; render(); }
+});
+document.addEventListener('change', async e => {
+  const t = e.target, w = t.dataset && t.dataset.indst; if(!w || !app.db) return;
+  const [id, k] = w.split('|'), p = app.prep[id]; if(!p) return;
+  const staff = clone(p.staff || []); if(!staff[+k]) return; staff[+k].email = t.value.trim().toLowerCase();
+  try{ await app.db.doc('voorbereid/' + id).update({staff}); app.prep[id] = {...p, staff}; }catch(err){ app.indMsg = 'Opslaan is niet gelukt.'; }
 });
 document.addEventListener('change', async e => {
   const t = e.target, v = t.dataset && t.dataset.indcp; if(!v || !app.db) return;
