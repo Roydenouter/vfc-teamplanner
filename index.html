@@ -1793,7 +1793,8 @@ document.addEventListener('click', async e => {
 /* ================= ronde 4: wisselschema ================= */
 const WS_DEF = {periods:4, periodMin:10, field:5, keeper:true, rules:{}};
 const WS_INT = [['geen','Geen wissels'],['periode','Elke periode'],['10','Elke 10 minuten'],['5','Elke 5 minuten']];
-const WS_KEEP = [['periode','Per periode'],['helft','Per helft'],['vast','Vaste keeper'],['vrij','Geen vaste keeper']];
+const WS_KEEP = [['periode','Per periode'],['helft','Per helft'],['graag','Alleen wie graag keept'],['vast','Vaste keeper'],['vrij','Geen vaste keeper']];
+const fmtMin = v => Number.isInteger(+v) ? String(v) : Math.floor(v) + '½';
 Object.assign(app, {wsNow:0, wsDraft:null});
 const wsCfg = (dash, rec) => { const cat = rec ? teamCat(rec.team) : null, st = (dash && dash.wissel) || {}; return cat && cat.ws ? {...WS_DEF, ...cat.ws, rules:{...(st.rules || {})}} : {...WS_DEF, ...st, rules:{...(st.rules || {})}}; };
 const onField = c => c.field + (c.keeper ? 1 : 0);
@@ -1801,7 +1802,7 @@ function wsRule(c, n){
   const r = c.rules[n]; if(r) return r;
   const of = onField(c);
   if(c.keeperFixed) return {interval: n <= of ? 'geen' : (c.defInt || '15'), keeper:'vast'};
-  return {interval: n <= of ? 'geen' : n === of + 1 ? '10' : '5', keeper:'periode'};
+  return {interval: n <= of ? 'geen' : c.defInt || (n === of + 1 ? '10' : '5'), keeper:'periode'};
 }
 function matchMins(m){
   const lu = m.lineup; if(!lu) return null;
@@ -1839,7 +1840,8 @@ function makeLineup(rec, dash, m){
   const blocks = [];
   for(let p = 0; p < c.periods; p++) for(let t = 0; t < c.periodMin; t += L) blocks.push({period:p, start:p * c.periodMin + t, len:Math.min(L, c.periodMin - t)});
   const order = present.map(p => p.id);
-  const keepOrder = order.slice().sort((a,b) => (tally.keep[a]||0) - (tally.keep[b]||0) || order.indexOf(a) - order.indexOf(b));
+  const favs = order.filter(p => (dash.keepFav || {})[p]);
+  const keepOrder = (rule.keeper === 'graag' && favs.length ? favs : order).slice().sort((a,b) => (tally.keep[a]||0) - (tally.keep[b]||0) || order.indexOf(a) - order.indexOf(b));
   const useKeeper = c.keeper && rule.keeper !== 'vrij';
   const isOut = (pid, bi) => ov.out[pid] != null && ov.out[pid] <= bi;
   const kFav = dash.keepFav || {}, isK = p => p.keeper || (p.pos || []).includes('K');
@@ -1873,7 +1875,7 @@ function wsPanel(rec, dash, m, uidv){
   if(!lu.present.length) return `<div class="card"><div class="kind">Wisselschema</div><p class="hint">Nog geen spelers.</p></div>`;
   const intLabel = (WS_INT.find(x => x[0] === lu.rule.interval) || [0,''])[1], kLabel = (WS_KEEP.find(x => x[0] === lu.rule.keeper) || [0,''])[1];
   const now = Math.min(app.wsNow, lu.blocks.length - 1);
-  const head = lu.blocks.map((b, bi) => `<th class="nc ws-h${bi===now?' now':''}${bi>0 && b.period !== lu.blocks[bi-1].period ? ' psep' : ''}"><button type="button" class="ws-hb" data-wsnow="${bi}" title="Vanaf dit blok aanpassen">${b.start}'</button></th>`).join('');
+  const head = lu.blocks.map((b, bi) => `<th class="nc ws-h${bi===now?' now':''}${bi>0 && b.period !== lu.blocks[bi-1].period ? ' psep' : ''}"><button type="button" class="ws-hb" data-wsnow="${bi}" title="Vanaf dit blok aanpassen">${fmtMin(b.start)}'</button></th>`).join('');
   const stats = {}; lu.present.forEach(p => { stats[p] = {veld:0, keep:0, bank:0}; });
   lu.blocks.forEach(b => { b.field.forEach(p => stats[p].veld += b.len); if(b.keeper) stats[b.keeper].keep += b.len; b.bench.forEach(p => stats[p].bank += b.len); });
   if(m.lineup && m.lineup.adj) lu.present.forEach(p => { const a = m.lineup.adj[p] || {}; stats[p] = {veld:+a.veld || 0, keep:+a.keep || 0, bank:+a.bank || 0}; });
@@ -1888,7 +1890,7 @@ function wsPanel(rec, dash, m, uidv){
   }).join('');
   return `<div class="card ws">
     <div class="card-head" style="align-items:flex-start"><div><div class="kind">Wisselschema · ${lu.n} spelers</div>
-      <p class="hint" style="margin:2px 0 0">${c.periods} × ${c.periodMin} minuten, ${c.field} veldspelers${c.keeper ? ' en een keeper' : ''}. ${lu.n <= onField(c) ? shortTxt(lu.n, onField(c)) : `${intLabel}${c.keeper ? ', keeper ' + kLabel.toLowerCase() : ''}.`}${lu.marked ? '' : ' Er is nog niemand op ✓ gezet, dus het schema rekent met het hele team.'}</p></div>
+      <p class="hint" style="margin:2px 0 0">${c.periods} × ${fmtMin(c.periodMin)} minuten, ${c.field} veldspelers${c.keeper ? ' en een keeper' : ''}. ${lu.n <= onField(c) ? shortTxt(lu.n, onField(c)) : `${intLabel}${c.keeper ? ', keeper ' + kLabel.toLowerCase() : ''}.`}${lu.marked ? '' : ' Er is nog niemand op ✓ gezet, dus het schema rekent met het hele team.'}</p></div>
       </div>
     ${m.lineup && m.lineup.adj ? '<p class="hint" style="margin:0">De minuten van deze wedstrijd zijn achteraf aangepast. Het seizoensoverzicht rekent met die aangepaste minuten.</p>' : ''}
     <div class="tablewrap"><table class="wst"><thead><tr><th>Speler</th>${head}<th class="nc">Speeltijd</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>
@@ -1972,7 +1974,7 @@ function teamCat(team){
   if(girls && age >= 13){ const b = big(age); return {label:'MO' + age, desc:b.desc, rules:RULES_ALL, stand:true, ws:b.ws}; }
   if(age <= 7) return {label:'O7', desc:'4 tegen 4, wedstrijdjes van 15 minuten', rules:'https://www.knvb.nl/downloads/bestand/27158/infographic-4t4-o7', stand:false, ws:{periods:1, periodMin:15, field:4, keeper:false}};
   if(age <= 9) return {label:'O' + age, desc:'6 tegen 6, 2 × 20 minuten', rules:RULES_6, stand:false, ws:{periods:4, periodMin:10, field:5, keeper:true}};
-  if(age === 10) return {label:'O10', desc:'6 tegen 6, 2 × 25 minuten', rules:RULES_6, stand:false, ws:{periods:2, periodMin:25, field:5, keeper:true}};
+  if(age === 10) return {label:'O10', desc:'6 tegen 6, 2 × 25 minuten', rules:RULES_6, stand:false, ws:{periods:4, periodMin:12.5, field:5, keeper:true, defInt:'periode'}};
   if(age <= 12) return {label:'O' + age, desc:'8 tegen 8, 2 × 30 minuten', rules:RULES_8, stand:true, ws:{periods:4, periodMin:15, field:7, keeper:true}};
   const b = big(age); return {label:'O' + age, desc:b.desc, rules:RULES_ALL, stand:true, ws:b.ws};
 }
@@ -2329,7 +2331,7 @@ function wsTab(rec, dash, uidv){
   let prep = '';
   if(m){
     const lu = makeLineup(rec, dash, m), of = onField(c), att = m.att || {}, yes = ps.filter(p => att[p.id] === 'ja').length;
-    const ivs = [...[5,10,15,20].filter(v => v < c.periodMin).map(v => [String(v), `Elke ${v} minuten`]), ['periode', `Elke ${c.periodMin} minuten (hele periode)`]];
+    const ivs = [...[5,10,15,20].filter(v => v < c.periodMin).map(v => [String(v), `Elke ${v} minuten`]), ['periode', `Elke ${fmtMin(c.periodMin)} minuten (${/^M?O(8|9|10)$/.test((cat || {}).label || '') ? 'bij elke time-out en de rust' : 'hele periode'})`]];
     const cur = ivs.some(([v]) => v === String(lu.rule.interval)) ? String(lu.rule.interval) : 'periode';
     const sel = (attr, opts, val) => `<select ${attr}>${opts.map(([v,l]) => `<option value="${v}" ${String(v) === String(val) ? 'selected' : ''}>${l}</option>`).join('')}</select>`;
     prep = `<div class="card">
@@ -2341,7 +2343,8 @@ function wsTab(rec, dash, uidv){
           <div class="field"><span class="label">Wedstrijdvorm</span><ul class="ws-form">${(() => { const [vs, dur] = cat && cat.desc ? cat.desc.split(', ') : []; return [
             vs ? ['pitch', vs] : null,
             dur ? ['clock', dur] : ['clock', `${c.periods * c.periodMin} minuten`],
-            c.periods > 2 ? ['blocks', `${c.periods} blokken van ${c.periodMin} minuten`] : null,
+            c.periods > 2 ? ['blocks', `${c.periods} blokken van ${fmtMin(c.periodMin)} minuten`] : null,
+            /^M?O(8|9|10)$/.test((cat || {}).label || '') ? ['clock', 'Time-out halverwege elke helft'] : null,
             ['people', `${c.field} veldspelers`],
             c.keeper ? ['glove', c.keeperFixed ? '1 vaste keeper' : '1 keeper'] : null
           ].filter(Boolean).map(([i, t]) => `<li>${icon(i)}<span>${esc(t)}</span></li>`).join(''); })()}</ul></div>
