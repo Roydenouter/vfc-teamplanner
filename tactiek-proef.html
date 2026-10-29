@@ -1,0 +1,3138 @@
+<!DOCTYPE html>
+<html lang="nl" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VFC Tactiekbord · KNVB Tactiek- & Speltypebord | Broadcast Edition</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        :root {
+            --bg-deep: #090D16;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-deep);
+            background-image: 
+                radial-gradient(circle at 50% 45%, rgba(16, 185, 129, 0.08) 0%, rgba(15, 23, 42, 0.4) 45%, #090D16 80%),
+                radial-gradient(circle at 50% 0%, rgba(249, 115, 22, 0.07) 0%, transparent 50%);
+            color: #f8fafc;
+            overflow: hidden;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        /* Glassmorphism Surfaces */
+        .glass-bar {
+            background: rgba(15, 23, 42, 0.72);
+            backdrop-filter: blur(18px);
+            -webkit-backdrop-filter: blur(18px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.65), 0 0 1px 1px rgba(255, 255, 255, 0.04) inset;
+        }
+        .glass-card {
+            background: rgba(15, 23, 42, 0.68);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.09);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+        }
+        /* Pill states */
+        .format-pill-active {
+            background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+            color: #ffffff !important;
+            box-shadow: 0 4px 15px -2px rgba(249, 115, 22, 0.45);
+        }
+        .scenario-pill-active {
+            background: rgba(255, 255, 255, 0.12);
+            color: #ffffff !important;
+            border-color: rgba(249, 115, 22, 0.55) !important;
+            box-shadow: 0 0 15px -3px rgba(249, 115, 22, 0.25);
+        }
+        .icon-toggle-active {
+            background: rgba(56, 189, 248, 0.16) !important;
+            color: #38bdf8 !important;
+            border-color: rgba(56, 189, 248, 0.4) !important;
+        }
+        .tool-pill-active {
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%) !important;
+            color: #ffffff !important;
+            box-shadow: 0 4px 12px -2px rgba(59, 130, 246, 0.45);
+        }
+        /* Hide scrollbars inside pills */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        /* Smooth UI transitions for Focus Mode */
+        .ui-panel {
+            transition: opacity 0.35s cubic-bezier(0.4, 0, 0.2, 1), transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        body.focus-mode .ui-hide-on-focus {
+            opacity: 0;
+            pointer-events: none;
+            transform: translateY(-12px);
+        }
+        body.focus-mode .ui-hide-bottom-on-focus {
+            opacity: 0;
+            pointer-events: none;
+            transform: translateY(16px);
+        }
+        canvas {
+            touch-action: none;
+        }
+    </style>
+</head>
+<body class="h-screen w-screen relative flex flex-col justify-between select-none">
+
+    <!-- ==================== 1. BOVENBALK (COMPACT & STRAK GLASSMORPHISM) ==================== -->
+    <header class="ui-panel ui-hide-on-focus relative z-30 pt-3 px-3 sm:px-6 flex items-center justify-center pointer-events-none">
+        <div class="glass-bar rounded-2xl px-2.5 py-2 flex flex-wrap lg:flex-nowrap items-center justify-between gap-2 sm:gap-4 max-w-[1540px] w-full pointer-events-auto">
+            
+            <!-- Links: Brand + Segmented Pill Selector voor KNVB-wedstrijdvormen -->
+            <div class="flex items-center gap-2.5 overflow-x-auto no-scrollbar">
+                <div class="flex items-center gap-2 pl-1 pr-2 border-r border-slate-700/70 shrink-0">
+                    <div class="w-8 h-8 rounded-xl bg-gradient-to-br from-orange-500 to-amber-600 flex items-center justify-center shadow-md shadow-orange-500/20">
+                        <i class="fa-solid fa-futbol text-white text-sm"></i>
+                    </div>
+                    <div class="hidden xl:block">
+                        <div class="text-xs font-extrabold tracking-tight text-white leading-none">TACTIEKBORD</div>
+                        <div class="text-[10px] text-slate-400 font-medium mt-0.5">KNVB Spelvormen</div>
+                    </div>
+                </div>
+
+                <!-- Segmented Pill Selector: 4v4, 6v6, 8v8, 11v11, Rondo -->
+                <div class="flex items-center bg-slate-950/60 p-1 rounded-xl border border-white/5 shrink-0" id="formatTabs">
+                    <button onclick="selectFormat('4v4')" data-format="4v4" class="format-tab px-2.5 py-1.5 rounded-lg text-xs font-semibold text-slate-400 hover:text-white transition-all flex items-center gap-1.5">
+                        <span>4v4</span>
+                        <span class="hidden sm:inline text-[10px] opacity-70 font-normal">JO7</span>
+                    </button>
+                    <button onclick="selectFormat('6v6')" data-format="6v6" class="format-tab format-pill-active px-2.5 py-1.5 rounded-lg text-xs font-semibold text-slate-400 hover:text-white transition-all flex items-center gap-1.5">
+                        <span>6v6</span>
+                        <span class="hidden sm:inline text-[10px] opacity-85 font-normal">JO8-10</span>
+                    </button>
+                    <button onclick="selectFormat('8v8')" data-format="8v8" class="format-tab px-2.5 py-1.5 rounded-lg text-xs font-semibold text-slate-400 hover:text-white transition-all flex items-center gap-1.5">
+                        <span>8v8</span>
+                        <span class="hidden sm:inline text-[10px] opacity-70 font-normal">JO11-12</span>
+                    </button>
+                    <button onclick="selectFormat('11v11')" data-format="11v11" class="format-tab px-2.5 py-1.5 rounded-lg text-xs font-semibold text-slate-400 hover:text-white transition-all flex items-center gap-1.5">
+                        <span>11v11</span>
+                        <span class="hidden sm:inline text-[10px] opacity-70 font-normal">JO13+</span>
+                    </button>
+                    <button onclick="selectFormat('training')" data-format="training" class="format-tab px-2.5 py-1.5 rounded-lg text-xs font-semibold text-slate-400 hover:text-white transition-all flex items-center gap-1.5">
+                        <i class="fa-solid fa-arrows-spin text-[10px] text-amber-400"></i>
+                        <span>Rondo / Positiespel</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Midden: Speltype Pill-kiezer + Sub-formatie Dropdown -->
+            <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
+                <div class="flex items-center gap-1 bg-slate-950/50 p-1 rounded-xl border border-white/5" id="scenarioButtons">
+                    <button onclick="selectScenario('opbouw')" data-scenario="opbouw" class="scenario-btn scenario-pill-active px-2.5 py-1.5 rounded-lg text-xs font-medium text-slate-300 hover:text-white border border-transparent transition-all flex items-center gap-1.5 shrink-0">
+                        <i class="fa-solid fa-share-nodes text-emerald-400 text-[11px]"></i>
+                        <span>Opbouw</span>
+                    </button>
+                    <button onclick="selectScenario('aanval')" data-scenario="aanval" class="scenario-btn px-2.5 py-1.5 rounded-lg text-xs font-medium text-slate-300 hover:text-white border border-transparent transition-all flex items-center gap-1.5 shrink-0">
+                        <i class="fa-solid fa-bolt text-orange-400 text-[11px]"></i>
+                        <span>Vleugelaanval & Voorzet</span>
+                    </button>
+                    <button onclick="selectScenario('omschakeling')" data-scenario="omschakeling" class="scenario-btn px-2.5 py-1.5 rounded-lg text-xs font-medium text-slate-300 hover:text-white border border-transparent transition-all flex items-center gap-1.5 shrink-0">
+                        <i class="fa-solid fa-shield-halved text-rose-400 text-[11px]"></i>
+                        <span>Druk & Kantelen</span>
+                    </button>
+                    <button onclick="selectScenario('spelhervatting')" data-scenario="spelhervatting" class="scenario-btn px-2.5 py-1.5 rounded-lg text-xs font-medium text-slate-300 hover:text-white border border-transparent transition-all flex items-center gap-1.5 shrink-0">
+                        <i class="fa-solid fa-flag text-sky-400 text-[11px]"></i>
+                        <span>Spelhervatting</span>
+                    </button>
+                    <button onclick="selectScenario('formatie')" data-scenario="formatie" class="scenario-btn px-2.5 py-1.5 rounded-lg text-xs font-medium text-slate-300 hover:text-white border border-transparent transition-all flex items-center gap-1.5 shrink-0">
+                        <i class="fa-solid fa-chess-board text-purple-400 text-[11px]"></i>
+                        <span>Basisformaties</span>
+                    </button>
+                </div>
+
+                <!-- Sub-selector voor specifieke Formatie of Rondo-variant -->
+                <div id="subFormationPanel" class="shrink-0">
+                    <select id="formationSelect" onchange="changeSubFormation(this.value)" class="bg-slate-900/90 hover:bg-slate-800 border border-orange-500/40 rounded-xl px-2.5 py-1.5 text-xs text-orange-300 font-semibold focus:outline-none focus:border-orange-400 cursor-pointer transition">
+                    </select>
+                </div>
+            </div>
+
+            <!-- Rechts: Subtiele Icon-toggles voor Weergave & Focus-modus -->
+            <div class="flex items-center gap-1.5 shrink-0 ml-auto lg:ml-0">
+                <button id="btnTogglePaths" onclick="toggleVisualOption('paths')" class="icon-toggle-active w-8 h-8 rounded-xl bg-slate-900/70 hover:bg-slate-800 text-slate-400 border border-white/10 flex items-center justify-center transition" title="Looppaden & Passlijnen tonen/verbergen">
+                    <i class="fa-solid fa-route text-xs"></i>
+                </button>
+                <button id="btnToggleTriangles" onclick="toggleVisualOption('triangles')" class="icon-toggle-active w-8 h-8 rounded-xl bg-slate-900/70 hover:bg-slate-800 text-slate-400 border border-white/10 flex items-center justify-center transition" title="Speeldriehoeken & Zones tonen/verbergen">
+                    <i class="fa-solid fa-draw-polygon text-xs"></i>
+                </button>
+                <button id="btnToggleNames" onclick="toggleVisualOption('names')" class="icon-toggle-active w-8 h-8 rounded-xl bg-slate-900/70 hover:bg-slate-800 text-slate-400 border border-white/10 flex items-center justify-center transition" title="Spelersnamen & Rollen tonen/verbergen">
+                    <i class="fa-solid fa-tag text-xs"></i>
+                </button>
+                <button id="btnToggleOpponents" onclick="toggleVisualOption('opponents')" class="icon-toggle-active w-8 h-8 rounded-xl bg-slate-900/70 hover:bg-slate-800 text-slate-400 border border-white/10 flex items-center justify-center transition" title="Tegenstander (Blauw) tonen/verbergen">
+                    <i class="fa-solid fa-user-group text-xs"></i>
+                </button>
+                <div class="w-px h-5 bg-white/10 mx-0.5"></div>
+                <button onclick="toggleOrientation()" class="w-8 h-8 rounded-xl bg-slate-900/70 hover:bg-slate-800 text-slate-300 border border-white/10 flex items-center justify-center transition" title="Draai Speelveld (Horizontaal / Verticaal)">
+                    <i class="fa-solid fa-rotate text-xs text-orange-400"></i>
+                </button>
+                <button onclick="toggleFocusMode()" class="px-2.5 h-8 rounded-xl bg-slate-900/70 hover:bg-slate-800 text-slate-300 border border-white/10 flex items-center gap-1.5 text-xs font-medium transition" title="Focus-modus (Minimaliseer alle panelen)">
+                    <i class="fa-solid fa-expand text-xs text-emerald-400"></i>
+                    <span class="hidden xl:inline">Focus</span>
+                </button>
+            </div>
+
+        </div>
+    </header>
+
+    <!-- Zwevende knop om Focus-modus te verlaten (alleen zichtbaar in Focus-modus) -->
+    <div id="focusExitBar" class="fixed top-4 right-5 z-50 hidden items-center gap-2">
+        <button onclick="togglePlay()" class="glass-bar px-3.5 py-2 rounded-xl text-xs font-bold text-white hover:bg-slate-800/80 flex items-center gap-2 transition">
+            <i class="fa-solid fa-play text-orange-400" id="focusPlayIcon"></i>
+            <span id="focusPhaseLabel">Fase 1/4</span>
+        </button>
+        <button onclick="toggleFocusMode()" class="glass-bar px-3.5 py-2 rounded-xl text-xs font-semibold text-slate-200 hover:text-white flex items-center gap-2 border border-orange-500/40 transition">
+            <i class="fa-solid fa-compress text-orange-400"></i>
+            <span>Toon Bediening</span>
+        </button>
+    </div>
+
+    <!-- ==================== 2. HET SPEELVELD (HERO CANVAS MET ADEMRUIMTE) ==================== -->
+    <main class="flex-1 relative w-full h-full flex items-center justify-center overflow-hidden px-3 sm:px-8 py-2">
+        
+        <div id="canvasWrapper" class="w-full h-full flex items-center justify-center relative">
+            <canvas id="pitchCanvas" class="cursor-grab active:cursor-grabbing"></canvas>
+        </div>
+
+        <!-- Zwevende Coaching-kaart (Rechtsboven / Linksonder, inklapbaar & minimalistisch) -->
+        <aside id="coachingCard" class="ui-panel ui-hide-on-focus fixed left-4 sm:left-6 bottom-24 z-20 max-w-xs sm:max-w-sm w-full pointer-events-auto transition-all duration-300">
+            <div class="glass-card rounded-2xl p-3.5 text-slate-100">
+                <div class="flex items-center justify-between gap-2">
+                    <div class="flex items-center gap-2">
+                        <span class="px-2 py-0.5 text-[10px] font-extrabold uppercase tracking-wider rounded-md bg-orange-500/20 text-orange-400 border border-orange-500/30" id="coachStepBadge">FASE 1 / 4</span>
+                        <span id="activeFormatBadge" class="text-[11px] font-semibold text-slate-400">6v6 • JO8-JO10</span>
+                    </div>
+                    <div class="flex items-center gap-1">
+                        <button onclick="openEditPhaseTextModal()" class="w-6 h-6 rounded-lg hover:bg-white/10 text-slate-400 hover:text-white flex items-center justify-center transition" title="Bewerk coaching-tekst">
+                            <i class="fa-solid fa-pen text-[10px]"></i>
+                        </button>
+                        <button onclick="toggleCoachCardCollapse()" class="w-6 h-6 rounded-lg hover:bg-white/10 text-slate-400 hover:text-white flex items-center justify-center transition" title="Kaart inklappen/uitklappen">
+                            <i class="fa-solid fa-chevron-down text-xs" id="coachCollapseIcon"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <h3 class="font-bold text-sm text-white mt-1.5 leading-snug" id="coachStepTitle">Keeper kiest positie & achterhoede maakt breed</h3>
+
+                <div id="coachCardBody" class="mt-1.5 space-y-2 overflow-hidden transition-all">
+                    <p class="text-xs text-slate-300/95 leading-relaxed" id="coachStepDesc">
+                        De verdedigers zakken breed uit naar de zijkanten en de middenvelders bewegen in de passhoeken.
+                    </p>
+                    <div class="pt-2 border-t border-white/10 flex items-start gap-2 text-[11px] text-emerald-300/95">
+                        <i class="fa-solid fa-lightbulb mt-0.5 text-emerald-400 shrink-0"></i>
+                        <span id="coachStepTip" class="italic">"Open aannemen zodat je direct vooruit kunt spelen."</span>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Subtiele Zwevende Speler-Editor Popover (verschijnt rechtsboven wanneer je een speler aanklikt & wilt hernoemen) -->
+        <div id="playerPopover" class="ui-panel ui-hide-on-focus fixed right-4 sm:right-6 bottom-24 z-20 hidden pointer-events-auto">
+            <div class="glass-card rounded-2xl p-3 w-64">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-[11px] font-bold uppercase tracking-wider text-orange-400" id="selPlayerTeamBadge">Speler Aanpassen</span>
+                    <button onclick="closePlayerPopover()" class="text-slate-400 hover:text-white text-xs">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+                <div class="grid grid-cols-3 gap-1.5">
+                    <div>
+                        <label class="block text-[9px] uppercase text-slate-400 mb-0.5">Code/Nr</label>
+                        <input type="text" id="inputPlayerRole" maxlength="3" oninput="savePlayerEdit()" class="w-full bg-slate-900/90 border border-white/15 rounded-lg px-2 py-1 text-xs font-bold text-white uppercase focus:outline-none focus:border-orange-500">
+                    </div>
+                    <div class="col-span-2">
+                        <label class="block text-[9px] uppercase text-slate-400 mb-0.5">Naam / Positie</label>
+                        <input type="text" id="inputPlayerName" maxlength="16" oninput="savePlayerEdit()" class="w-full bg-slate-900/90 border border-white/15 rounded-lg px-2 py-1 text-xs text-white focus:outline-none focus:border-orange-500">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- ==================== 3. ONDERBALK (MEDIA-SPELER & MINIMALISTISCHE TEKENTOOLBAR) ==================== -->
+    <footer class="ui-panel ui-hide-bottom-on-focus relative z-30 pb-3 px-3 sm:px-6 flex items-center justify-center pointer-events-none">
+        <div class="glass-bar rounded-2xl px-3 py-2 flex flex-wrap lg:flex-nowrap items-center justify-between gap-3 max-w-[1360px] w-full pointer-events-auto">
+            
+            <!-- Links: Afspeelknoppen (Vorige, Play/Pauze, Volgende) -->
+            <div class="flex items-center gap-1.5 shrink-0">
+                <button onclick="prevPhase()" class="w-8 h-8 rounded-xl bg-slate-900/80 hover:bg-slate-800 text-slate-300 hover:text-white border border-white/10 flex items-center justify-center transition" title="Vorige fase">
+                    <i class="fa-solid fa-backward-step text-xs"></i>
+                </button>
+                <button onclick="togglePlay()" id="btnPlayPause" class="px-4 h-9 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-400 hover:to-amber-400 text-white font-bold text-xs shadow-lg shadow-orange-500/25 flex items-center gap-2 transition">
+                    <i class="fa-solid fa-play text-xs" id="iconPlayPause"></i>
+                    <span id="textPlayPause">Afspelen</span>
+                </button>
+                <button onclick="nextPhase()" class="w-8 h-8 rounded-xl bg-slate-900/80 hover:bg-slate-800 text-slate-300 hover:text-white border border-white/10 flex items-center justify-center transition" title="Volgende fase">
+                    <i class="fa-solid fa-forward-step text-xs"></i>
+                </button>
+            </div>
+
+            <!-- Midden: Visuele Fase-bolletjes & Vloeiende Voortgangslijn + Snelheid & +Fase -->
+            <div class="flex-1 flex items-center gap-3 min-w-[240px]">
+                <!-- Interactive Phase Nodes & Progress Track -->
+                <div class="flex-1 flex flex-col gap-1">
+                    <div class="flex items-center justify-between gap-1" id="phasePillsContainer">
+                        <!-- Wordt dynamisch gevuld met fase-bolletjes -->
+                    </div>
+                    <!-- Scrubber Bar -->
+                    <div class="w-full h-1.5 bg-slate-950/90 rounded-full overflow-hidden cursor-pointer relative border border-white/5" id="timelineTrack" onclick="scrubTimeline(event)">
+                        <div id="timelineFill" class="h-full bg-gradient-to-r from-orange-500 via-amber-400 to-emerald-400 rounded-full transition-all duration-75" style="width: 25%"></div>
+                    </div>
+                </div>
+
+                <!-- Snelheid (0.5x, 1x, 1.5x) & Loop -->
+                <div class="hidden sm:flex items-center bg-slate-950/60 p-0.5 rounded-xl border border-white/5 text-[11px] shrink-0">
+                    <button onclick="setSpeed(0.5)" data-speed="0.5" class="speed-btn px-2 py-1 rounded-lg text-slate-400 hover:text-white transition">0.5x</button>
+                    <button onclick="setSpeed(1)" data-speed="1" class="speed-btn px-2 py-1 rounded-lg bg-white/15 text-white font-bold transition">1x</button>
+                    <button onclick="setSpeed(1.5)" data-speed="1.5" class="speed-btn px-2 py-1 rounded-lg text-slate-400 hover:text-white transition">1.5x</button>
+                </div>
+
+                <button onclick="toggleLoop()" id="btnLoop" class="w-8 h-8 rounded-xl bg-orange-500/20 text-orange-400 border border-orange-500/40 text-xs flex items-center justify-center shrink-0 transition" title="Continu herhalen aan/uit">
+                    <i class="fa-solid fa-repeat text-xs"></i>
+                </button>
+
+                <!-- Eigen Fase Toevoegen / Verwijderen / Reset -->
+                <div class="flex items-center gap-1 shrink-0">
+                    <button onclick="addCustomPhase()" class="px-2.5 h-8 rounded-xl text-xs font-bold bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 transition flex items-center gap-1" title="Leg huidige posities vast als een nieuwe animatie-fase">
+                        <i class="fa-solid fa-plus text-[10px]"></i>
+                        <span>Fase</span>
+                    </button>
+                    <button onclick="deleteCurrentPhase()" id="btnDeletePhase" class="w-8 h-8 rounded-xl bg-slate-900/70 hover:bg-rose-950/60 text-slate-400 hover:text-rose-300 border border-white/10 transition flex items-center justify-center" title="Verwijder huidige fase">
+                        <i class="fa-solid fa-trash-can text-[11px]"></i>
+                    </button>
+                    <button onclick="resetCurrentScenario()" class="w-8 h-8 rounded-xl bg-slate-900/70 hover:bg-slate-800 text-slate-400 hover:text-white border border-white/10 transition flex items-center justify-center" title="Herstel standaard posities">
+                        <i class="fa-solid fa-rotate-left text-[11px]"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Rechts: Minimalistische Teken- & Interactietoolbar -->
+            <div class="flex items-center gap-1 bg-slate-950/60 p-1 rounded-xl border border-white/5 shrink-0">
+                <button onclick="setInteractionTool('move')" id="toolMove" class="tool-btn tool-pill-active px-2.5 py-1.5 rounded-lg text-xs font-semibold text-slate-300 hover:text-white transition flex items-center gap-1.5" title="Verplaatsen (Versleep spelers en bal, dubbelklik op speler voor naam)">
+                    <i class="fa-solid fa-hand text-[11px]"></i>
+                    <span class="hidden md:inline">Verplaatsen</span>
+                </button>
+                <button onclick="setInteractionTool('pass')" id="toolPass" class="tool-btn px-2.5 py-1.5 rounded-lg text-xs font-semibold text-slate-300 hover:text-white transition flex items-center gap-1.5" title="Teken Passlijn (Stippellijn)">
+                    <i class="fa-solid fa-location-arrow text-amber-400 text-[11px]"></i>
+                    <span class="hidden md:inline">Passlijn</span>
+                </button>
+                <button onclick="setInteractionTool('run')" id="toolRun" class="tool-btn px-2.5 py-1.5 rounded-lg text-xs font-semibold text-slate-300 hover:text-white transition flex items-center gap-1.5" title="Teken Looplijn (Gebogen pijl)">
+                    <i class="fa-solid fa-bezier-curve text-sky-400 text-[11px]"></i>
+                    <span class="hidden md:inline">Looplijn</span>
+                </button>
+                <button onclick="setInteractionTool('zone')" id="toolZone" class="tool-btn px-2.5 py-1.5 rounded-lg text-xs font-semibold text-slate-300 hover:text-white transition flex items-center gap-1.5" title="Ruimte / Zone markeren op het gras">
+                    <i class="fa-regular fa-circle-dot text-emerald-400 text-[11px]"></i>
+                    <span class="hidden md:inline">Zone</span>
+                </button>
+                <button onclick="clearDrawings()" class="px-2 py-1.5 rounded-lg text-xs font-semibold text-rose-400 hover:bg-rose-500/15 transition flex items-center justify-center" title="Wis getekende lijnen en zones">
+                    <i class="fa-solid fa-eraser text-xs"></i>
+                </button>
+            </div>
+
+        </div>
+    </footer>
+
+    <!-- Modal voor het aanpassen van Fase-titel & Uitleg -->
+    <div id="editPhaseModal" class="fixed inset-0 bg-black/75 backdrop-blur-md z-50 hidden items-center justify-center p-4">
+        <div class="glass-card rounded-2xl max-w-md w-full p-5 border border-white/15">
+            <div class="flex items-center justify-between mb-3">
+                <h3 class="font-bold text-sm text-white flex items-center gap-2">
+                    <i class="fa-solid fa-pen-to-square text-orange-400"></i>
+                    Fase-uitleg aanpassen
+                </h3>
+                <button onclick="closeEditPhaseTextModal()" class="text-slate-400 hover:text-white">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <div class="space-y-3 text-xs">
+                <div>
+                    <label class="block font-semibold text-slate-400 mb-1">Titel van de fase</label>
+                    <input type="text" id="modalPhaseTitle" class="w-full bg-slate-900/90 border border-white/15 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-orange-500">
+                </div>
+                <div>
+                    <label class="block font-semibold text-slate-400 mb-1">Korte uitleg (1-2 zinnen)</label>
+                    <textarea id="modalPhaseDesc" rows="2" class="w-full bg-slate-900/90 border border-white/15 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-orange-500"></textarea>
+                </div>
+                <div>
+                    <label class="block font-semibold text-slate-400 mb-1">Coachtip</label>
+                    <input type="text" id="modalPhaseTip" class="w-full bg-slate-900/90 border border-white/15 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-orange-500">
+                </div>
+            </div>
+            <div class="mt-4 flex justify-end gap-2">
+                <button onclick="closeEditPhaseTextModal()" class="px-3.5 py-1.5 rounded-xl bg-white/10 hover:bg-white/15 text-xs font-semibold text-slate-300">Annuleren</button>
+                <button onclick="saveEditPhaseTextModal()" class="px-4 py-1.5 rounded-xl bg-orange-500 hover:bg-orange-400 text-xs font-bold text-white">Opslaan</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /**************************************************************************
+         * 1. STATE & BROADCAST CONFIGURATION
+         **************************************************************************/
+        const canvas = document.getElementById('pitchCanvas');
+        const ctx = canvas.getContext('2d');
+
+        let currentFormat = '6v6';         // '4v4', '6v6', '8v8', '11v11', 'training'
+        let currentScenario = 'opbouw';    // 'opbouw', 'aanval', 'omschakeling', 'spelhervatting', 'formatie'
+        let currentSubFormation = 0;       // Sub-index for formations or Rondo/Positiespel
+        let isVertical = false;            // Horizontal vs Vertical view
+        let isFocusMode = false;
+        let isCoachCardCollapsed = false;
+
+        // Animation & Continuous 60FPS Visual State
+        let isPlaying = false;
+        let currentPhaseIndex = 0;
+        let phaseProgress = 0;             // 0.0 -> 1.0 interpolation
+        let playbackSpeed = 1.0;
+        let loopEnabled = true;
+        let lastFrameTime = performance.now();
+        let pauseHoldTimer = 0;
+        let visualTick = 0;                // Continuous timer for marching ants, pulsing rings & ball spin
+
+        // Visual Toggles
+        let showPaths = true;              // Looplijnen & Passlijnen
+        let showTriangles = true;          // Speeldriehoeken & Dekkingszones
+        let showPlayerNames = true;        // Positienamen onder pucks
+        let showOpponents = true;          // Blauwe tegenstanders
+
+        // Interaction & Drawing State
+        let activeTool = 'move';           // 'move', 'pass', 'run', 'zone'
+        let draggingEntity = null;
+        let hoveredEntity = null;
+        let selectedPlayer = null;
+        let lastClickTime = 0;
+        let isDrawing = false;
+        let currentDrawing = null;
+        let customDrawings = [];
+
+        // Active Scenario Data
+        let activeData = null;
+
+        // Cached Grass Noise Pattern for Photorealistic Turf
+        let grassPatternCanvas = null;
+
+        // Pitch Geometry Cache (in CSS pixels)
+        let pitchRect = { left: 40, top: 36, width: 900, height: 560, cssWidth: 980, cssHeight: 632 };
+
+        /**************************************************************************
+         * 2. SCENARIO & FORMATION GENERATOR ENGINE (ALL KNVB FORMATS)
+         **************************************************************************/
+        const SUB_FORMATIONS = {
+            '4v4': [
+                { name: '1-2-1 Ruit (JO7 Basis)', roles: [['CV','Achter'], ['LV','Links'], ['RV','Rechts'], ['SP','Spits']] },
+                { name: '2-2 Vierkant / Blok', roles: [['LV','Linksachter'], ['RV','Rechtsachter'], ['LA','Linksvoor'], ['RA','Rechtsvoor']] },
+                { name: '1-1-2 Centrale As', roles: [['CV','Verdediger'], ['M','Midden'], ['LA','Linksvoor'], ['RA','Rechtsvoor']] }
+            ],
+            '6v6': [
+                { name: '1-2-2-1 Dubbele Ruit', roles: [['K','Keeper'], ['LV','Linksachter'], ['RV','Rechtsachter'], ['LM','Linksmid'], ['RM','Rechtsmid'], ['SP','Spits']] },
+                { name: '1-2-1-2 Centrale Mid', roles: [['K','Keeper'], ['LV','Linksachter'], ['RV','Rechtsachter'], ['CM','Middenveld'], ['LA','Linksvoor'], ['RA','Rechtsvoor']] },
+                { name: '1-3-2 Brede Opbouw', roles: [['K','Keeper'], ['LV','Linksback'], ['CV','Centraal'], ['RV','Rechtsback'], ['LA','Linksvoor'], ['RA','Rechtsvoor']] }
+            ],
+            '8v8': [
+                { name: '1-3-3-1 KNVB Basis', roles: [['K','Keeper'], ['LV','Linksback'], ['CV','Centraal'], ['RV','Rechtsback'], ['LM','Linksmid'], ['CM','Centraal Mid'], ['RM','Rechtsmid'], ['SP','Spits']] },
+                { name: '1-3-2-2 Twee Spitsen', roles: [['K','Keeper'], ['LV','Linksback'], ['CV','Centraal'], ['RV','Rechtsback'], ['LM','Linksmid'], ['RM','Rechtsmid'], ['LA','Linksvoor'], ['RA','Rechtsvoor']] },
+                { name: '1-2-3-2 Halfveld Hoog', roles: [['K','Keeper'], ['LCV','Linksachter'], ['RCV','Rechtsachter'], ['LM','Linkshalf'], ['CM','Spelverdeler'], ['RM','Rechtshalf'], ['LA','Linksvoor'], ['RA','Rechtsvoor']] }
+            ],
+            '11v11': [
+                { name: '1-4-3-3 Punt naar achter', roles: [['K','Keeper'], ['LB','Linksback'], ['LCV','Centraal L'], ['RCV','Centraal R'], ['RB','Rechtsback'], ['CVM','Controleur (6)'], ['LCM','Linkshalf (8)'], ['RCM','Rechtshalf (10)'], ['LA','Linksbuiten'], ['SP','Spits (9)'], ['RA','Rechtsbuiten']] },
+                { name: '1-4-4-2 Vlak / Ruit', roles: [['K','Keeper'], ['LB','Linksback'], ['LCV','Centraal L'], ['RCV','Centraal R'], ['RB','Rechtsback'], ['LM','Linksmid'], ['LCM','Controleur'], ['RCM','Aanvallend Mid'], ['RM','Rechtsmid'], ['LSP','Spits L'], ['RSP','Spits R']] },
+                { name: '1-3-5-2 Wingbacks', roles: [['K','Keeper'], ['LCV','Centraal L'], ['CV','Libero/CV'], ['RCV','Centraal R'], ['LWB','Wingback L'], ['LCM','Mid L'], ['CVM','Controleur'], ['RCM','Mid R'], ['RWB','Wingback R'], ['LSP','Spits L'], ['RSP','Spits R']] }
+            ],
+            'training': [
+                { name: 'Positiespel 4v4 + 2 Neutraal', type: 'positiespel' },
+                { name: 'Rondo 4 tegen 1 (Snelheid)', type: 'rondo4v1' },
+                { name: 'Rondo 6 tegen 2 (Split-pass)', type: 'rondo6v2' }
+            ]
+        };
+
+        function buildScenarioData(format, scenarioKey, subIdx = 0) {
+            if (format === 'training') return buildTrainingScenario(scenarioKey, subIdx);
+            if (format === '4v4') return build4v4Scenario(scenarioKey, subIdx);
+            if (format === '6v6') return build6v6Scenario(scenarioKey, subIdx);
+            if (format === '8v8') return build8v8Scenario(scenarioKey, subIdx);
+            return build11v11Scenario(scenarioKey, subIdx);
+        }
+
+        /* -------------------- 4 TEGEN 4 (JO7 MINI-PUPILLEN) -------------------- */
+        function build4v4Scenario(scenarioKey, subIdx) {
+            const baseRoles = SUB_FORMATIONS['4v4'][subIdx]?.roles || SUB_FORMATIONS['4v4'][0].roles;
+            const awayRoles = [['V1','Tegen 1'], ['V2','Tegen 2'], ['A1','Tegen 3'], ['A2','Tegen 4']];
+
+            if (scenarioKey === 'opbouw') {
+                return createStructuredScenario(baseRoles, awayRoles, [], [
+                    {
+                        title: 'Fase 1: Ruit vormen & veld breed maken',
+                        desc: 'Achterste speler (CV) dribbelt in. Links (LV) en Rechts (RV) bieden zich breed aan zodat er direct twee speeldriehoeken ontstaan.',
+                        tip: '"Maak het veld groot bij balbezit; ga niet op een kluitje staan."',
+                        ball: { x: 0.16, y: 0.50 },
+                        home: [[0.14, 0.50], [0.34, 0.20], [0.34, 0.80], [0.58, 0.50]],
+                        away: [[0.45, 0.45], [0.55, 0.28], [0.55, 0.72], [0.78, 0.50]],
+                        triangles: [[0, 1, 3], [0, 2, 3]]
+                    },
+                    {
+                        title: 'Fase 2: Inspelen op de vrije flank',
+                        desc: 'De eerste tegenstander stapt uit op de bal. CV speelt strak in op de vrijstaande linkerspeler (LV) die open aanneemt.',
+                        tip: '"Open aannemen met de verste voet zodat je direct vooruit kijkt!"',
+                        ball: { x: 0.38, y: 0.22 },
+                        home: [[0.22, 0.46], [0.38, 0.22], [0.42, 0.78], [0.64, 0.44]],
+                        away: [[0.32, 0.48], [0.52, 0.30], [0.58, 0.68], [0.80, 0.50]],
+                        triangles: [[0, 1, 3], [1, 2, 3]]
+                    },
+                    {
+                        title: 'Fase 3: Bijsluiten & combinatie met de spits',
+                        desc: 'LV passt schuin vooruit naar de spits (SP). Rechts (RV) sluit direct mee aan richting het tweede paaltje.',
+                        tip: '"Na je pass blijf je niet stilstaan, maar sluit je direct mee aan!"',
+                        ball: { x: 0.66, y: 0.42 },
+                        home: [[0.38, 0.45], [0.54, 0.20], [0.56, 0.74], [0.66, 0.42]],
+                        away: [[0.48, 0.35], [0.58, 0.25], [0.68, 0.65], [0.84, 0.48]],
+                        triangles: [[1, 3, 0], [3, 2, 0]]
+                    },
+                    {
+                        title: 'Fase 4: Breed leggen & afronden op het mini-doel',
+                        desc: 'De spits legt de bal breed op de meegelopen RV of schiet zelf beheerst laag in het mini-doeltje.',
+                        tip: '"Vlak voor het mini-doeltje: plaats de bal laag met de binnenkant van de voet."',
+                        ball: { x: 0.96, y: 0.52 },
+                        home: [[0.52, 0.48], [0.72, 0.26], [0.82, 0.60], [0.78, 0.42]],
+                        away: [[0.62, 0.38], [0.74, 0.32], [0.76, 0.68], [0.88, 0.48]],
+                        triangles: [[1, 3, 2]]
+                    }
+                ]);
+            }
+
+            if (scenarioKey === 'aanval') {
+                return createStructuredScenario(baseRoles, awayRoles, [], [
+                    {
+                        title: 'Fase 1: Ruimte zoeken op de vleugel',
+                        desc: 'Na balverovering op eigen helft sprinten LV en RV direct breed uit om diepte te maken langs de zijlijn.',
+                        tip: '"Hebben wij de bal? Meteen breed en diep kijken!"',
+                        ball: { x: 0.26, y: 0.50 },
+                        home: [[0.24, 0.50], [0.42, 0.18], [0.42, 0.82], [0.62, 0.50]],
+                        away: [[0.38, 0.52], [0.56, 0.30], [0.56, 0.70], [0.76, 0.50]],
+                        triangles: [[0, 1, 3], [0, 2, 3]]
+                    },
+                    {
+                        title: 'Fase 2: Dieptepass in de loop op rechts',
+                        desc: 'De pass gaat in de vrije ruimte voor RV zodat hij op volle snelheid kan opstomen richting de achterlijn.',
+                        tip: '"Geef de pass vóór de speler in de ruimte zodat hij snelheid houdt."',
+                        ball: { x: 0.68, y: 0.80 },
+                        home: [[0.42, 0.52], [0.62, 0.26], [0.66, 0.80], [0.72, 0.48]],
+                        away: [[0.52, 0.55], [0.68, 0.35], [0.62, 0.72], [0.82, 0.52]],
+                        triangles: [[0, 2, 3], [1, 2, 3]]
+                    },
+                    {
+                        title: 'Fase 3: Terugtrekken voor het doel (Cut-back)',
+                        desc: 'RV bereikt de achterlijn en legt de bal strak terug op de inkomende spits (SP) en linkerspeler (LV).',
+                        tip: '"Hoofd omhoog voor de voorzet: kijk wie er vrij staat voor het doel!"',
+                        ball: { x: 0.82, y: 0.46, arc: 0.35 },
+                        home: [[0.58, 0.52], [0.80, 0.32], [0.84, 0.76], [0.82, 0.46]],
+                        away: [[0.68, 0.58], [0.78, 0.24], [0.80, 0.70], [0.88, 0.52]],
+                        triangles: [[1, 3, 2]]
+                    },
+                    {
+                        title: 'Fase 4: Afronding in het mini-doeltje!',
+                        desc: 'De spits tikt de voorzet in één keer binnen terwijl LV bij de tweede paal klaarstaat.',
+                        tip: '"Altijd met twee spelers voor het doel meelopen!"',
+                        ball: { x: 0.97, y: 0.48 },
+                        home: [[0.62, 0.50], [0.86, 0.34], [0.86, 0.72], [0.88, 0.48]],
+                        away: [[0.72, 0.56], [0.82, 0.26], [0.84, 0.68], [0.90, 0.54]],
+                        triangles: [[1, 3, 2]]
+                    }
+                ]);
+            }
+
+            if (scenarioKey === 'omschakeling') {
+                return createStructuredScenario(baseRoles, awayRoles, [], [
+                    {
+                        title: 'Fase 1: Balverlies hoog op het veld',
+                        desc: 'De tegenstander onderschept de bal. Ons viertal staat nog wijd uit elkaar.',
+                        tip: '"Bal kwijt? Geen seconde balen, meteen samen terugschakelen!"',
+                        ball: { x: 0.72, y: 0.32 },
+                        home: [[0.48, 0.50], [0.68, 0.20], [0.68, 0.82], [0.76, 0.45]],
+                        away: [[0.72, 0.32], [0.65, 0.68], [0.42, 0.25], [0.38, 0.62]],
+                        triangles: []
+                    },
+                    {
+                        title: 'Fase 2: Trechter maken & as beschermen',
+                        desc: 'LV vertraagt de balbezitter. De andere drie spelers sprinten schuin terug naar het midden om het doel af te schermen.',
+                        tip: '"Bescherm altijd eerst het midden voor ons eigen doeltje!"',
+                        ball: { x: 0.56, y: 0.28 },
+                        home: [[0.32, 0.48], [0.52, 0.28], [0.44, 0.60], [0.56, 0.42]],
+                        away: [[0.56, 0.28], [0.58, 0.68], [0.38, 0.22], [0.36, 0.55]],
+                        triangles: [[0, 1, 2], [0, 1, 3]]
+                    },
+                    {
+                        title: 'Fase 3: Kantelen naar de zijlijn & insluiten',
+                        desc: 'Ons hele blok kantelt compact mee naar de zijkant zodat de tegenstander niet naar binnen kan dribbelen.',
+                        tip: '"Houd de onderlinge afstanden klein en dwing de aanvaller naar de lijn."',
+                        ball: { x: 0.38, y: 0.22 },
+                        home: [[0.20, 0.42], [0.35, 0.24], [0.30, 0.52], [0.38, 0.36]],
+                        away: [[0.38, 0.22], [0.48, 0.65], [0.28, 0.18], [0.32, 0.48]],
+                        triangles: [[0, 1, 2], [0, 1, 3]]
+                    },
+                    {
+                        title: 'Fase 4: Balverovering & snelle uitbraak!',
+                        desc: 'We onderscheppen de pass in de trechter en waaieren direct weer breed uit voor de tegenaanval.',
+                        tip: '"Zodra wij de bal veroveren: direct weer het veld breed maken!"',
+                        ball: { x: 0.32, y: 0.36 },
+                        home: [[0.24, 0.44], [0.38, 0.18], [0.32, 0.36], [0.52, 0.55]],
+                        away: [[0.36, 0.22], [0.46, 0.62], [0.28, 0.26], [0.30, 0.45]],
+                        triangles: [[0, 2, 3], [1, 2, 3]]
+                    }
+                ]);
+            }
+
+            if (scenarioKey === 'spelhervatting') {
+                return createStructuredScenario(baseRoles, awayRoles, [], [
+                    {
+                        title: 'Fase 1: Intrap / Indribbelen vanaf de zijlijn',
+                        desc: 'De bal ligt stil op de linkerzijlijn bij LV. De tegenstanders dekken kort.',
+                        tip: '"Bij JO7 mag je indribbelen of intrappen: kijk eerst waar de ruimte ligt!"',
+                        ball: { x: 0.45, y: 0.03 },
+                        home: [[0.28, 0.38], [0.45, 0.04], [0.52, 0.72], [0.62, 0.32]],
+                        away: [[0.34, 0.34], [0.58, 0.28], [0.55, 0.66], [0.76, 0.48]],
+                        triangles: []
+                    },
+                    {
+                        title: 'Fase 2: Loskomen uit de dekking (vooractie)',
+                        desc: 'De spits (SP) doet eerst een stap weg en sprint dan explosief in de bal, terwijl CV achter de balzekerheid biedt.',
+                        tip: '"Eerst weglopen van je tegenstander en dan pas in de bal komen!"',
+                        ball: { x: 0.45, y: 0.03 },
+                        home: [[0.32, 0.24], [0.45, 0.04], [0.58, 0.68], [0.54, 0.18]],
+                        away: [[0.38, 0.32], [0.64, 0.34], [0.58, 0.62], [0.78, 0.48]],
+                        triangles: [[0, 1, 3]]
+                    },
+                    {
+                        title: 'Fase 3: De 1-2 combinatie langs de lijn',
+                        desc: 'LV speelt de spits in (1) en sprint direct door. De spits kaatst de bal in één keer terug in de loop van LV (2).',
+                        tip: '"Inspelen en meteen doorbewegen voor de één-twee!"',
+                        ball: { x: 0.54, y: 0.18 },
+                        home: [[0.36, 0.28], [0.56, 0.08], [0.64, 0.64], [0.54, 0.18]],
+                        away: [[0.42, 0.30], [0.58, 0.24], [0.62, 0.58], [0.78, 0.48]],
+                        triangles: [[0, 1, 3], [1, 3, 2]]
+                    },
+                    {
+                        title: 'Fase 4: Vrije doortocht op het doel',
+                        desc: 'LV ontvangt de kaats op snelheid achter de verdediger en kan vrij op het doeltje af.',
+                        tip: '"Met een snelle 1-2 speel je elke directe tegenstander uit!"',
+                        ball: { x: 0.72, y: 0.16 },
+                        home: [[0.46, 0.36], [0.72, 0.16], [0.76, 0.58], [0.66, 0.38]],
+                        away: [[0.50, 0.34], [0.62, 0.24], [0.68, 0.54], [0.82, 0.46]],
+                        triangles: [[1, 3, 2]]
+                    }
+                ]);
+            }
+
+            const formCoords = [
+                [[0.18, 0.50], [0.42, 0.20], [0.42, 0.80], [0.68, 0.50]],
+                [[0.24, 0.30], [0.24, 0.70], [0.62, 0.30], [0.62, 0.70]],
+                [[0.18, 0.50], [0.42, 0.50], [0.66, 0.25], [0.66, 0.75]]
+            ][subIdx] || [[0.18, 0.50], [0.42, 0.20], [0.42, 0.80], [0.68, 0.50]];
+
+            return buildFormationMovementScenario(baseRoles, awayRoles, formCoords, SUB_FORMATIONS['4v4'][subIdx]?.name || '1-2-1 Ruit');
+        }
+
+        /* -------------------- 6 TEGEN 6 (JO8 / JO9 / JO10 KWART VELD) -------------------- */
+        function build6v6Scenario(scenarioKey, subIdx) {
+            const baseRoles = SUB_FORMATIONS['6v6'][subIdx]?.roles || SUB_FORMATIONS['6v6'][0].roles;
+            const awayRoles = [['K','Keeper'], ['LV','Verdediger'], ['RV','Verdediger'], ['LM','Midden'], ['RM','Midden'], ['SP','Spits']];
+
+            if (scenarioKey === 'opbouw') {
+                return createStructuredScenario(baseRoles, awayRoles, [], [
+                    {
+                        title: 'Fase 1: Opbouw vanuit de keeper – Breed uitzakken',
+                        desc: 'Linksachter (LV) en Rechtsachter (RV) zakken breed uit naar de zijkanten. De middenvelders zorgen voor diepte en schuine passlijnen.',
+                        tip: '"Verdedigers: maak het veld zo breed mogelijk naast het doelgebied!"',
+                        ball: { x: 0.08, y: 0.50 },
+                        home: [[0.06, 0.50], [0.20, 0.16], [0.20, 0.84], [0.42, 0.34], [0.42, 0.66], [0.64, 0.50]],
+                        away: [[0.94, 0.50], [0.76, 0.34], [0.76, 0.66], [0.54, 0.30], [0.54, 0.70], [0.32, 0.50]],
+                        triangles: [[0, 1, 3], [0, 2, 4], [1, 3, 4]]
+                    },
+                    {
+                        title: 'Fase 2: Inspelen LV & driehoek vormen',
+                        desc: 'Keeper speelt LV aan. Direct biedt LM zich langs de lijn aan en komt RM schuin in het centrum voor het driehoekje.',
+                        tip: '"LV heeft nu 3 keuzes: langs de lijn (LM), binnendoor (RM) of terug op de keeper."',
+                        ball: { x: 0.22, y: 0.16 },
+                        home: [[0.07, 0.44], [0.22, 0.16], [0.24, 0.76], [0.44, 0.14], [0.38, 0.46], [0.66, 0.44]],
+                        away: [[0.94, 0.50], [0.74, 0.32], [0.74, 0.64], [0.48, 0.22], [0.52, 0.58], [0.28, 0.32]],
+                        triangles: [[0, 1, 4], [1, 3, 4], [3, 4, 5]]
+                    },
+                    {
+                        title: 'Fase 3: Pass binnendoor naar de vrije middenvelder',
+                        desc: 'LV speelt de bal schuin binnendoor naar RM in het centrum. Die neemt open aan en kijkt direct naar de spits en vleugels.',
+                        tip: '"Open aannemen in het middenveld versnelt het spel direct!"',
+                        ball: { x: 0.44, y: 0.46 },
+                        home: [[0.10, 0.48], [0.32, 0.18], [0.32, 0.76], [0.54, 0.16], [0.44, 0.46], [0.70, 0.48]],
+                        away: [[0.93, 0.50], [0.72, 0.34], [0.72, 0.66], [0.44, 0.18], [0.52, 0.52], [0.34, 0.28]],
+                        triangles: [[1, 3, 4], [3, 4, 5], [2, 4, 5]]
+                    },
+                    {
+                        title: 'Fase 4: Steekpass op de spits & bijsluiten',
+                        desc: 'Vanuit het middenveld wordt de spits (SP) aangespeeld terwijl beide middenvelders bijsluiten voor het doel.',
+                        tip: '"Verdedigers schuiven mee op tot de middenlijn voor de afvallende bal."',
+                        ball: { x: 0.74, y: 0.48 },
+                        home: [[0.14, 0.50], [0.44, 0.24], [0.46, 0.76], [0.72, 0.22], [0.58, 0.48], [0.74, 0.48]],
+                        away: [[0.93, 0.50], [0.76, 0.38], [0.76, 0.62], [0.56, 0.26], [0.58, 0.56], [0.46, 0.36]],
+                        triangles: [[3, 4, 5], [2, 4, 5]]
+                    }
+                ]);
+            }
+
+            if (scenarioKey === 'aanval') {
+                return createStructuredScenario(baseRoles, awayRoles, [], [
+                    {
+                        title: 'Fase 1: Spelverplaatsing naar de vrije rechtervleugel',
+                        desc: 'LM heeft de bal in het centrum en ziet dat Rechtsmid (RM) veel ruimte heeft aan de rechterkant.',
+                        tip: '"Is het druk aan de linkerkant? Verplaats de bal snel naar de vrije rechterkant!"',
+                        ball: { x: 0.46, y: 0.42 },
+                        home: [[0.10, 0.50], [0.32, 0.24], [0.34, 0.76], [0.46, 0.42], [0.54, 0.84], [0.68, 0.48]],
+                        away: [[0.94, 0.50], [0.74, 0.34], [0.72, 0.64], [0.52, 0.34], [0.56, 0.66], [0.38, 0.46]],
+                        triangles: [[1, 3, 5], [2, 3, 4], [3, 4, 5]]
+                    },
+                    {
+                        title: 'Fase 2: Dieptepass in de loop van RM',
+                        desc: 'De bal wordt in de ruimte voor RM gespeeld zodat hij op snelheid langs zijn tegenstander kan dribbelen.',
+                        tip: '"Speel de bal in de loop zodat RM geen snelheid verliest."',
+                        ball: { x: 0.74, y: 0.82 },
+                        home: [[0.14, 0.50], [0.42, 0.28], [0.48, 0.78], [0.62, 0.44], [0.72, 0.82], [0.76, 0.46]],
+                        away: [[0.94, 0.50], [0.76, 0.38], [0.74, 0.70], [0.60, 0.40], [0.64, 0.74], [0.48, 0.48]],
+                        triangles: [[2, 3, 4], [3, 4, 5]]
+                    },
+                    {
+                        title: 'Fase 3: Hoge of strakke voorzet vanaf de flank',
+                        desc: 'RM geeft een voorzet met een boog richting de eerste en tweede paal waar SP en LM al inlopen.',
+                        tip: '"Verdeel de posities voor het doel: 1e paal, 2e paal en rand strafschopgebied!"',
+                        ball: { x: 0.86, y: 0.80 },
+                        home: [[0.16, 0.50], [0.48, 0.34], [0.64, 0.70], [0.80, 0.30], [0.86, 0.80], [0.84, 0.54]],
+                        away: [[0.94, 0.50], [0.84, 0.42], [0.84, 0.66], [0.70, 0.46], [0.78, 0.74], [0.56, 0.50]],
+                        triangles: [[2, 4, 5], [3, 4, 5]]
+                    },
+                    {
+                        title: 'Fase 4: Afronding bij de tweede paal!',
+                        desc: 'De voorzet vliegt over de eerste verdediger heen en wordt door de inkomende LM of SP binnengeschoten.',
+                        tip: '"Blijf altijd kijken naar de bal tot je hem raakt!"',
+                        ball: { x: 0.96, y: 0.44, arc: 0.85 },
+                        home: [[0.18, 0.50], [0.50, 0.38], [0.68, 0.66], [0.88, 0.38], [0.88, 0.78], [0.88, 0.56]],
+                        away: [[0.94, 0.54], [0.86, 0.44], [0.88, 0.64], [0.74, 0.48], [0.82, 0.74], [0.58, 0.50]],
+                        triangles: [[2, 3, 5]]
+                    }
+                ]);
+            }
+
+            if (scenarioKey === 'omschakeling') {
+                return createStructuredScenario(baseRoles, awayRoles, [], [
+                    {
+                        title: 'Fase 1: Balverlies op de helft van de tegenstander',
+                        desc: 'De aanval wordt onderschept. Ons team staat nog hoog en breed in aanvalsformatie.',
+                        tip: '"Direct omschakelen: dichtstbijzijnde speler zet druk op de bal!"',
+                        ball: { x: 0.74, y: 0.66 },
+                        home: [[0.14, 0.50], [0.44, 0.22], [0.46, 0.78], [0.66, 0.28], [0.70, 0.74], [0.76, 0.52]],
+                        away: [[0.94, 0.50], [0.74, 0.34], [0.74, 0.66], [0.56, 0.26], [0.58, 0.68], [0.40, 0.48]],
+                        triangles: []
+                    },
+                    {
+                        title: 'Fase 2: Trechter maken richting eigen doel',
+                        desc: 'RM vertraagt de opbouw terwijl SP, LM en beide verdedigers samenknijpen naar de as van het veld.',
+                        tip: '"Maak het midden dicht zodat zij nooit recht door het hart kunnen passen."',
+                        ball: { x: 0.58, y: 0.70 },
+                        home: [[0.10, 0.52], [0.30, 0.40], [0.32, 0.64], [0.46, 0.46], [0.54, 0.68], [0.56, 0.54]],
+                        away: [[0.92, 0.50], [0.68, 0.34], [0.68, 0.68], [0.48, 0.22], [0.58, 0.70], [0.36, 0.48]],
+                        triangles: [[1, 2, 3], [2, 3, 4], [2, 4, 5]]
+                    },
+                    {
+                        title: 'Fase 3: Kantelen & insluiten aan de zijlijn',
+                        desc: 'De tegenstander dribbelt langs de rechterzijlijn. Ons hele blok kantelt mee en sluit de passlijnen af.',
+                        tip: '"RV staat klaar om aan te pakken, LV geeft schuin daarachter rugdekking!"',
+                        ball: { x: 0.40, y: 0.76 },
+                        home: [[0.08, 0.54], [0.22, 0.48], [0.28, 0.72], [0.36, 0.52], [0.42, 0.76], [0.46, 0.62]],
+                        away: [[0.90, 0.50], [0.62, 0.36], [0.62, 0.68], [0.42, 0.24], [0.40, 0.76], [0.32, 0.52]],
+                        triangles: [[0, 1, 2], [1, 2, 3], [2, 3, 4]]
+                    },
+                    {
+                        title: 'Fase 4: Balverovering & uitbreken via de vrije kant!',
+                        desc: 'RV verovert de bal in de trechter en speelt direct de vrijstaande LM aan voor de snelle counter.',
+                        tip: '"Na balwinst direct uit de drukte spelen naar de vrije kant!"',
+                        ball: { x: 0.44, y: 0.36 },
+                        home: [[0.08, 0.50], [0.24, 0.40], [0.30, 0.68], [0.44, 0.36], [0.46, 0.72], [0.58, 0.50]],
+                        away: [[0.90, 0.50], [0.62, 0.36], [0.62, 0.68], [0.42, 0.24], [0.36, 0.74], [0.34, 0.54]],
+                        triangles: [[1, 2, 3], [2, 3, 5], [3, 4, 5]]
+                    }
+                ]);
+            }
+
+            if (scenarioKey === 'spelhervatting') {
+                return createStructuredScenario(baseRoles, awayRoles, [], [
+                    {
+                        title: 'Fase 1: Zijlijn-intrap bij 6 tegen 6',
+                        desc: 'LM staat klaar voor de intrap aan de linkerzijlijn. De tegenstander dekt kort op onze voorste spelers.',
+                        tip: '"Ga niet stilstaand wachten in de dekking, maar maak ruimte voor elkaar!"',
+                        ball: { x: 0.50, y: 0.03 },
+                        home: [[0.08, 0.50], [0.30, 0.16], [0.32, 0.64], [0.50, 0.04], [0.54, 0.52], [0.68, 0.26]],
+                        away: [[0.94, 0.50], [0.74, 0.30], [0.74, 0.62], [0.56, 0.22], [0.56, 0.48], [0.36, 0.22]],
+                        triangles: [[1, 3, 4]]
+                    },
+                    {
+                        title: 'Fase 2: Spits komt in de bal & RM duikt in de ruimte',
+                        desc: 'SP sprint in de bal en trekt de verdediger mee. RM duikt direct in de ruimte die daarachter vrijkomt!',
+                        tip: '"Als de één in de bal komt, sprint de ander in de ruimte daarachter!"',
+                        ball: { x: 0.50, y: 0.03 },
+                        home: [[0.08, 0.50], [0.32, 0.14], [0.34, 0.60], [0.50, 0.04], [0.64, 0.36], [0.58, 0.14]],
+                        away: [[0.94, 0.50], [0.70, 0.24], [0.74, 0.60], [0.58, 0.20], [0.60, 0.44], [0.38, 0.22]],
+                        triangles: [[1, 3, 5], [3, 4, 5]]
+                    },
+                    {
+                        title: 'Fase 3: Derdemans-combinatie via LV',
+                        desc: 'LM speelt SP aan (1), SP kaatst terug op LV (2), en LV steekt de bal direct diep op de vrijgelopen RM (3).',
+                        tip: '"Via een kaats bereik je makkelijk de speler die al op snelheid richting het doel loopt!"',
+                        ball: { x: 0.38, y: 0.16 },
+                        home: [[0.10, 0.50], [0.38, 0.16], [0.38, 0.58], [0.56, 0.08], [0.70, 0.32], [0.60, 0.18]],
+                        away: [[0.94, 0.50], [0.66, 0.22], [0.74, 0.58], [0.58, 0.16], [0.64, 0.42], [0.42, 0.22]],
+                        triangles: [[1, 3, 5], [1, 4, 5]]
+                    },
+                    {
+                        title: 'Fase 4: Vrij voor de keeper en afronden!',
+                        desc: 'RM ontvangt de steekpass in volle loop en schiet de bal laag in de verre hoek.',
+                        tip: '"Kijk naar de keeper en schiet beheerst in de vrije hoek."',
+                        ball: { x: 0.80, y: 0.36 },
+                        home: [[0.12, 0.50], [0.44, 0.22], [0.46, 0.58], [0.68, 0.16], [0.80, 0.36], [0.74, 0.24]],
+                        away: [[0.93, 0.48], [0.74, 0.28], [0.78, 0.54], [0.62, 0.18], [0.70, 0.44], [0.48, 0.26]],
+                        triangles: [[3, 4, 5], [1, 4, 2]]
+                    }
+                ]);
+            }
+
+            const formCoords = [
+                [[0.06, 0.50], [0.24, 0.24], [0.24, 0.76], [0.48, 0.24], [0.48, 0.76], [0.70, 0.50]],
+                [[0.06, 0.50], [0.24, 0.25], [0.24, 0.75], [0.46, 0.50], [0.68, 0.25], [0.68, 0.75]],
+                [[0.06, 0.50], [0.26, 0.18], [0.22, 0.50], [0.26, 0.82], [0.62, 0.28], [0.62, 0.72]]
+            ][subIdx] || [[0.06, 0.50], [0.24, 0.24], [0.24, 0.76], [0.48, 0.24], [0.48, 0.76], [0.70, 0.50]];
+
+            return buildFormationMovementScenario(baseRoles, awayRoles, formCoords, SUB_FORMATIONS['6v6'][subIdx]?.name || '1-2-2-1');
+        }
+
+        /* -------------------- 8 TEGEN 8 (JO11 / JO12 HALF VELD) -------------------- */
+        function build8v8Scenario(scenarioKey, subIdx) {
+            const baseRoles = SUB_FORMATIONS['8v8'][subIdx]?.roles || SUB_FORMATIONS['8v8'][0].roles;
+            const awayRoles = [['K','Keeper'], ['LV','Back L'], ['CV','Centraal'], ['RV','Back R'], ['LM','Mid L'], ['CM','Mid C'], ['RM','Mid R'], ['SP','Spits']];
+
+            if (scenarioKey === 'opbouw') {
+                return createStructuredScenario(baseRoles, awayRoles, [], [
+                    {
+                        title: 'Fase 1: Opbouw 1-3-3-1 vanuit de keeper',
+                        desc: 'CV biedt zich naast het doelgebied aan, backs (LV & RV) staan hoog en breed, en het middenveld vormt een driehoek.',
+                        tip: '"Backs breed en middenvelders op verschillende hoogtes voor schuine passlijnen!"',
+                        ball: { x: 0.06, y: 0.50 },
+                        home: [[0.05, 0.50], [0.22, 0.12], [0.16, 0.64], [0.22, 0.88], [0.44, 0.22], [0.36, 0.48], [0.44, 0.76], [0.68, 0.50]],
+                        away: [[0.95, 0.50], [0.78, 0.22], [0.80, 0.50], [0.78, 0.78], [0.56, 0.25], [0.54, 0.50], [0.56, 0.75], [0.30, 0.50]],
+                        triangles: [[0, 2, 5], [2, 3, 6], [1, 4, 5], [4, 5, 7]]
+                    },
+                    {
+                        title: 'Fase 2: Indribbelen CV & kantelen middenveld',
+                        desc: 'Keeper speelt CV in, die indribbelt om de spits te lokken. CM zakt schuin vrij in de rug van hun spits.',
+                        tip: '"Heb je ruimte als verdediger? Eerst indribbelen tot een tegenstander op je afstapt!"',
+                        ball: { x: 0.24, y: 0.64 },
+                        home: [[0.06, 0.52], [0.26, 0.14], [0.24, 0.64], [0.32, 0.88], [0.48, 0.24], [0.40, 0.48], [0.52, 0.74], [0.70, 0.48]],
+                        away: [[0.95, 0.50], [0.76, 0.24], [0.78, 0.50], [0.76, 0.76], [0.54, 0.28], [0.50, 0.52], [0.52, 0.74], [0.28, 0.58]],
+                        triangles: [[2, 3, 6], [2, 5, 6], [4, 5, 7]]
+                    },
+                    {
+                        title: 'Fase 3: Inspelen CM & spel verleggen',
+                        desc: 'CV passt binnendoor naar CM. CM draait open en verlegt het spel naar de vrije linkerkant (LM & LV).',
+                        tip: '"Opbouwen aan de ene kant om aan de andere kant in de vrije ruimte aan te vallen."',
+                        ball: { x: 0.42, y: 0.48 },
+                        home: [[0.08, 0.50], [0.38, 0.12], [0.28, 0.60], [0.40, 0.86], [0.58, 0.20], [0.42, 0.48], [0.56, 0.72], [0.74, 0.46]],
+                        away: [[0.94, 0.50], [0.74, 0.26], [0.76, 0.52], [0.74, 0.78], [0.52, 0.34], [0.48, 0.54], [0.48, 0.76], [0.34, 0.56]],
+                        triangles: [[1, 4, 5], [4, 5, 7], [5, 6, 7]]
+                    },
+                    {
+                        title: 'Fase 4: Doorbraak op de linkerflank',
+                        desc: 'CM steekt de bal op LM terwijl linksback (LV) eroverheen klapt en de spits + RM voor het doel komen.',
+                        tip: '"Het hele team schuift mee op tot over de middenlijn voor de aansluiting!"',
+                        ball: { x: 0.68, y: 0.20 },
+                        home: [[0.12, 0.50], [0.56, 0.10], [0.38, 0.52], [0.48, 0.80], [0.68, 0.20], [0.56, 0.46], [0.72, 0.68], [0.80, 0.44]],
+                        away: [[0.94, 0.50], [0.74, 0.22], [0.78, 0.48], [0.76, 0.74], [0.58, 0.28], [0.56, 0.50], [0.58, 0.70], [0.42, 0.50]],
+                        triangles: [[1, 4, 5], [4, 5, 7], [5, 6, 7]]
+                    }
+                ]);
+            }
+
+            if (scenarioKey === 'aanval') {
+                return createStructuredScenario(baseRoles, awayRoles, [], [
+                    {
+                        title: 'Fase 1: Overlap voorbereiden op de vleugel',
+                        desc: 'Bal bij CM. Rechtshalf (RM) komt iets naar binnen met zijn man, waardoor de rechterflank volledig openvalt voor RV.',
+                        tip: '"Middenvelder naar binnen = vrije ruimte op de buitenkant voor de opkomende back!"',
+                        ball: { x: 0.48, y: 0.48 },
+                        home: [[0.08, 0.50], [0.36, 0.20], [0.32, 0.50], [0.44, 0.88], [0.58, 0.22], [0.48, 0.48], [0.58, 0.66], [0.72, 0.48]],
+                        away: [[0.94, 0.50], [0.74, 0.24], [0.76, 0.50], [0.72, 0.70], [0.54, 0.26], [0.54, 0.50], [0.54, 0.68], [0.38, 0.48]],
+                        triangles: [[2, 3, 5], [3, 5, 6], [5, 6, 7]]
+                    },
+                    {
+                        title: 'Fase 2: Inspelen RM & overlap van Rechtsback (RV)',
+                        desc: 'CM speelt RM in. RV sprint achter RM langs ("eroverheen klappen") en krijgt de bal direct mee in de loop.',
+                        tip: '"Coach elkaar luid en duidelijk: roep \'Achterlangs!\' bij een overlap."',
+                        ball: { x: 0.62, y: 0.66 },
+                        home: [[0.10, 0.50], [0.42, 0.24], [0.38, 0.50], [0.68, 0.88], [0.68, 0.24], [0.56, 0.48], [0.62, 0.66], [0.76, 0.46]],
+                        away: [[0.94, 0.50], [0.76, 0.26], [0.78, 0.50], [0.70, 0.68], [0.58, 0.28], [0.58, 0.50], [0.58, 0.72], [0.44, 0.48]],
+                        triangles: [[3, 5, 6], [3, 6, 7], [4, 5, 7]]
+                    },
+                    {
+                        title: 'Fase 3: Voorzet vanaf de achterlijn & doelbezetting',
+                        desc: 'RV bereikt de achterlijn. Spits (SP) valt de 1e paal aan, LM sluit bij de 2e paal en CM komt op de rand van de 16.',
+                        tip: '"Zorg altijd voor 3 spelers voor het doel én restverdediging achter de bal!"',
+                        ball: { x: 0.86, y: 0.84 },
+                        home: [[0.12, 0.50], [0.48, 0.30], [0.44, 0.54], [0.86, 0.84], [0.82, 0.28], [0.74, 0.48], [0.76, 0.66], [0.86, 0.54]],
+                        away: [[0.95, 0.52], [0.84, 0.34], [0.86, 0.52], [0.82, 0.74], [0.68, 0.36], [0.70, 0.52], [0.68, 0.68], [0.52, 0.50]],
+                        triangles: [[3, 6, 7], [4, 5, 7]]
+                    },
+                    {
+                        title: 'Fase 4: Boogvoorzet & afronding!',
+                        desc: 'RV geeft een aangesneden voorzet door de lucht die bij de eerste of tweede paal wordt binnengeschoten.',
+                        tip: '"Loop pas op het laatste moment de ruimte voor de keeper in!"',
+                        ball: { x: 0.96, y: 0.46, arc: 0.95 },
+                        home: [[0.12, 0.50], [0.50, 0.32], [0.46, 0.54], [0.88, 0.82], [0.88, 0.34], [0.82, 0.48], [0.80, 0.64], [0.88, 0.54]],
+                        away: [[0.95, 0.50], [0.86, 0.36], [0.88, 0.52], [0.86, 0.72], [0.72, 0.38], [0.74, 0.52], [0.72, 0.66], [0.54, 0.50]],
+                        triangles: [[4, 5, 7], [5, 6, 7]]
+                    }
+                ]);
+            }
+
+            if (scenarioKey === 'omschakeling') {
+                return createStructuredScenario(baseRoles, awayRoles, [], [
+                    {
+                        title: 'Fase 1: Balverlies & Restverdediging',
+                        desc: 'De tegenstander onderschept onze pass. CV en CM bewaken direct het centrum tegen de dieptepass.',
+                        tip: '"Centrale verdediger en controleur (CM) sluiten direct de as!"',
+                        ball: { x: 0.74, y: 0.28 },
+                        home: [[0.10, 0.50], [0.52, 0.14], [0.40, 0.50], [0.50, 0.84], [0.68, 0.24], [0.56, 0.48], [0.68, 0.74], [0.76, 0.46]],
+                        away: [[0.94, 0.50], [0.74, 0.28], [0.78, 0.52], [0.74, 0.76], [0.56, 0.24], [0.54, 0.50], [0.56, 0.74], [0.38, 0.50]],
+                        triangles: [[1, 2, 5], [2, 3, 5]]
+                    },
+                    {
+                        title: 'Fase 2: Druk op de bal & Trechter vormen',
+                        desc: 'LM vertraagt de opbouw terwijl de overige spelers compact terugzakken in een trechtervorm.',
+                        tip: '"Houd de afstand tussen verdediging en middenveld klein (maximaal 12 meter)!"',
+                        ball: { x: 0.58, y: 0.22 },
+                        home: [[0.08, 0.50], [0.34, 0.22], [0.28, 0.46], [0.34, 0.68], [0.54, 0.22], [0.42, 0.42], [0.46, 0.62], [0.58, 0.38]],
+                        away: [[0.92, 0.50], [0.68, 0.26], [0.72, 0.50], [0.70, 0.74], [0.58, 0.22], [0.50, 0.48], [0.52, 0.74], [0.34, 0.46]],
+                        triangles: [[1, 2, 5], [2, 3, 6], [4, 5, 7]]
+                    },
+                    {
+                        title: 'Fase 3: Kantelen naar de linkerkant & dubbelen',
+                        desc: 'LV stapt uit op de vleugel, CV dekt de rug en RV knijpt helemaal naar binnen tot de as van het veld.',
+                        tip: '"Als de bal links is, knijpt onze rechtsback (RV) helemaal naar het midden!"',
+                        ball: { x: 0.40, y: 0.18 },
+                        home: [[0.06, 0.46], [0.32, 0.18], [0.24, 0.36], [0.26, 0.54], [0.44, 0.20], [0.36, 0.36], [0.38, 0.54], [0.50, 0.34]],
+                        away: [[0.90, 0.50], [0.64, 0.24], [0.68, 0.50], [0.66, 0.74], [0.40, 0.18], [0.44, 0.42], [0.48, 0.72], [0.28, 0.40]],
+                        triangles: [[1, 2, 5], [2, 3, 6], [1, 4, 5]]
+                    },
+                    {
+                        title: 'Fase 4: Balverovering & verplaatsen naar de vrije kant!',
+                        desc: 'LV en LM veroveren samen de bal en verplaatsen via CM direct naar de vrije rechterflank (RM).',
+                        tip: '"Na balverovering altijd direct uit de drukte spelen naar de vrije vleugel!"',
+                        ball: { x: 0.52, y: 0.68 },
+                        home: [[0.08, 0.48], [0.34, 0.18], [0.26, 0.44], [0.34, 0.72], [0.48, 0.22], [0.40, 0.46], [0.52, 0.68], [0.64, 0.48]],
+                        away: [[0.90, 0.50], [0.64, 0.24], [0.68, 0.50], [0.66, 0.74], [0.36, 0.18], [0.44, 0.42], [0.48, 0.72], [0.30, 0.42]],
+                        triangles: [[2, 5, 6], [3, 5, 6], [5, 6, 7]]
+                    }
+                ]);
+            }
+
+            if (scenarioKey === 'spelhervatting') {
+                return createStructuredScenario(baseRoles, awayRoles, [], [
+                    {
+                        title: 'Fase 1: Hoekschop opstelling & restverdediging',
+                        desc: 'RM neemt de hoekschop vanaf rechts. SP biedt zich kort aan, 3 spelers staan klaar op de rand 16 om in te lopen.',
+                        tip: '"Spreek een duidelijk signaal af voor het moment van inlopen!"',
+                        ball: { x: 0.98, y: 0.97 },
+                        home: [[0.14, 0.50], [0.46, 0.36], [0.76, 0.42], [0.52, 0.64], [0.78, 0.28], [0.78, 0.56], [0.97, 0.96], [0.84, 0.76]],
+                        away: [[0.96, 0.50], [0.86, 0.34], [0.88, 0.48], [0.86, 0.60], [0.80, 0.42], [0.82, 0.54], [0.90, 0.82], [0.62, 0.50]],
+                        triangles: [[3, 5, 7], [2, 4, 5]]
+                    },
+                    {
+                        title: 'Fase 2: Korte hoekschop & uitlokken verdediger',
+                        desc: 'SP komt kort in de bal waardoor de hoek van de voorzet verandert en de verdediging moet bijdraaien.',
+                        tip: '"Door een korte variant dwing je de verdediging om uit hun zone te stappen."',
+                        ball: { x: 0.88, y: 0.82 },
+                        home: [[0.14, 0.50], [0.46, 0.36], [0.82, 0.44], [0.56, 0.66], [0.82, 0.30], [0.80, 0.58], [0.92, 0.92], [0.88, 0.82]],
+                        away: [[0.96, 0.52], [0.86, 0.34], [0.88, 0.48], [0.86, 0.62], [0.82, 0.42], [0.84, 0.56], [0.90, 0.84], [0.62, 0.50]],
+                        triangles: [[5, 6, 7], [2, 4, 5]]
+                    },
+                    {
+                        title: 'Fase 3: Kaats in de loop & inlopen op snelheid',
+                        desc: 'SP kaatst op RM die nu vrij richting de zijkant van de 16 dribbelt. CV en LM starten hun sprint naar 1e en 2e paal.',
+                        tip: '"Zorg dat je op topsnelheid bent op het moment dat de voorzet vertrekt!"',
+                        ball: { x: 0.88, y: 0.74 },
+                        home: [[0.14, 0.50], [0.46, 0.36], [0.88, 0.48], [0.62, 0.66], [0.88, 0.34], [0.82, 0.58], [0.88, 0.74], [0.92, 0.86]],
+                        away: [[0.96, 0.52], [0.88, 0.36], [0.90, 0.50], [0.88, 0.62], [0.84, 0.44], [0.84, 0.58], [0.90, 0.78], [0.62, 0.50]],
+                        triangles: [[2, 4, 5], [5, 6, 7]]
+                    },
+                    {
+                        title: 'Fase 4: Hoge indraaiende voorzet & kopbal!',
+                        desc: 'RM krult de bal hoog voor het doel waar CV bij de eerste paal raak kopt!',
+                        tip: '"LV en RV blijven achter de bal voor de restverdediging tegen een uitbraak."',
+                        ball: { x: 0.96, y: 0.48, arc: 0.9 },
+                        home: [[0.14, 0.50], [0.46, 0.36], [0.92, 0.48], [0.62, 0.64], [0.90, 0.36], [0.84, 0.56], [0.88, 0.72], [0.92, 0.84]],
+                        away: [[0.96, 0.52], [0.89, 0.38], [0.91, 0.52], [0.89, 0.62], [0.86, 0.44], [0.86, 0.58], [0.90, 0.76], [0.62, 0.50]],
+                        triangles: [[2, 4, 5], [1, 3, 5]]
+                    }
+                ]);
+            }
+
+            const formCoords = [
+                [[0.05, 0.50], [0.24, 0.16], [0.20, 0.50], [0.24, 0.84], [0.48, 0.20], [0.44, 0.50], [0.48, 0.80], [0.72, 0.50]],
+                [[0.05, 0.50], [0.24, 0.18], [0.20, 0.50], [0.24, 0.82], [0.46, 0.32], [0.46, 0.68], [0.70, 0.32], [0.70, 0.68]],
+                [[0.05, 0.50], [0.22, 0.32], [0.22, 0.68], [0.46, 0.16], [0.44, 0.50], [0.46, 0.84], [0.70, 0.34], [0.70, 0.66]]
+            ][subIdx] || [[0.05, 0.50], [0.24, 0.16], [0.20, 0.50], [0.24, 0.84], [0.48, 0.20], [0.44, 0.50], [0.48, 0.80], [0.72, 0.50]];
+
+            return buildFormationMovementScenario(baseRoles, awayRoles, formCoords, SUB_FORMATIONS['8v8'][subIdx]?.name || '1-3-3-1');
+        }
+
+        /* -------------------- 11 TEGEN 11 (JO13+ / SENIOREN HEEL VELD) -------------------- */
+        function build11v11Scenario(scenarioKey, subIdx) {
+            const baseRoles = SUB_FORMATIONS['11v11'][subIdx]?.roles || SUB_FORMATIONS['11v11'][0].roles;
+            const awayRoles = [
+                ['K','Keeper'], ['LB','Back L'], ['LCV','CV L'], ['RCV','CV R'], ['RB','Back R'],
+                ['CVM','Mid 6'], ['LCM','Mid 8'], ['RCM','Mid 10'], ['LA','Buiten L'], ['SP','Spits'], ['RA','Buiten R']
+            ];
+
+            if (scenarioKey === 'opbouw') {
+                return createStructuredScenario(baseRoles, awayRoles, [], [
+                    {
+                        title: 'Fase 1: Opbouw 1-4-3-3 vanuit achteruit',
+                        desc: 'LCV en RCV splitsen breed naast de 16-meter. Backs (LB & RB) schuiven hoog op en controleur (6) biedt zich centraal aan.',
+                        tip: '"Maak het veld groot: CV\'s breed, backs hoog en nummer 6 vrij in de rug van hun spits!"',
+                        ball: { x: 0.05, y: 0.50 },
+                        home: [
+                            [0.04, 0.50], [0.24, 0.08], [0.12, 0.30], [0.12, 0.70], [0.24, 0.92],
+                            [0.24, 0.50], [0.38, 0.32], [0.38, 0.68], [0.58, 0.12], [0.64, 0.50], [0.58, 0.88]
+                        ],
+                        away: [
+                            [0.96, 0.50], [0.78, 0.15], [0.80, 0.38], [0.80, 0.62], [0.78, 0.85],
+                            [0.64, 0.50], [0.52, 0.34], [0.52, 0.66], [0.34, 0.22], [0.28, 0.50], [0.34, 0.78]
+                        ],
+                        triangles: [[0, 2, 5], [0, 3, 5], [1, 2, 6], [3, 4, 7], [5, 6, 7]]
+                    },
+                    {
+                        title: 'Fase 2: Indribbelen LCV & driehoeken vormen',
+                        desc: 'Keeper speelt LCV aan, die indribbelt richting het middenveld. LB, CVM (6) en LCM (8) vormen twee verbonden driehoeken.',
+                        tip: '"Door in te dribbelen dwing je hun rechtsbuiten of middenvelder om uit positie te stappen."',
+                        ball: { x: 0.22, y: 0.28 },
+                        home: [
+                            [0.05, 0.46], [0.32, 0.07], [0.22, 0.28], [0.16, 0.66], [0.28, 0.90],
+                            [0.28, 0.48], [0.42, 0.26], [0.42, 0.64], [0.62, 0.12], [0.66, 0.48], [0.60, 0.86]
+                        ],
+                        away: [
+                            [0.96, 0.50], [0.76, 0.15], [0.78, 0.38], [0.78, 0.62], [0.76, 0.85],
+                            [0.62, 0.48], [0.48, 0.30], [0.50, 0.62], [0.30, 0.24], [0.26, 0.46], [0.34, 0.76]
+                        ],
+                        triangles: [[1, 2, 6], [2, 5, 6], [5, 6, 7], [1, 6, 8]]
+                    },
+                    {
+                        title: 'Fase 3: Derdemans-combinatie op het middenveld',
+                        desc: 'LCV speelt LCM (8) in, die in één keer laat vallen op CVM (6) die met zijn gezicht naar het vijandelijke doel staat.',
+                        tip: '"Zoek via een kaats altijd de speler met het gezicht naar voren (de derdeman)!"',
+                        ball: { x: 0.34, y: 0.46 },
+                        home: [
+                            [0.06, 0.48], [0.40, 0.08], [0.26, 0.30], [0.22, 0.64], [0.36, 0.90],
+                            [0.34, 0.46], [0.46, 0.26], [0.48, 0.62], [0.66, 0.14], [0.70, 0.48], [0.66, 0.86]
+                        ],
+                        away: [
+                            [0.95, 0.50], [0.74, 0.16], [0.76, 0.38], [0.76, 0.62], [0.74, 0.84],
+                            [0.58, 0.48], [0.46, 0.28], [0.48, 0.60], [0.32, 0.24], [0.30, 0.44], [0.36, 0.74]
+                        ],
+                        triangles: [[2, 5, 6], [5, 6, 7], [5, 7, 9], [4, 7, 10]]
+                    },
+                    {
+                        title: 'Fase 4: Crosspass naar de vrije rechtervleugel',
+                        desc: 'CVM (6) verlegt het spel met een diagonale crosspass door de lucht naar Rechtsbuiten (RA) terwijl RB en RCM bijsluiten.',
+                        tip: '"Links lokken, rechts toeslaan met een crosspass in de vrije ruimte!"',
+                        ball: { x: 0.68, y: 0.84, arc: 0.75 },
+                        home: [
+                            [0.08, 0.50], [0.46, 0.14], [0.34, 0.34], [0.34, 0.62], [0.54, 0.92],
+                            [0.44, 0.48], [0.58, 0.32], [0.64, 0.66], [0.72, 0.20], [0.76, 0.50], [0.68, 0.84]
+                        ],
+                        away: [
+                            [0.95, 0.50], [0.74, 0.18], [0.76, 0.40], [0.74, 0.64], [0.72, 0.82],
+                            [0.60, 0.50], [0.52, 0.32], [0.54, 0.62], [0.40, 0.28], [0.38, 0.48], [0.42, 0.74]
+                        ],
+                        triangles: [[4, 7, 10], [7, 9, 10], [5, 6, 7]]
+                    }
+                ]);
+            }
+
+            if (scenarioKey === 'aanval') {
+                return createStructuredScenario(baseRoles, awayRoles, [], [
+                    {
+                        title: 'Fase 1: Positiespel op de helft van de tegenstander',
+                        desc: 'Bal bij RCM (10). Rechtsbuiten (RA) houdt het veld maximaal breed op de kalklijn en Rechtsback (RB) staat klaar om op te stomen.',
+                        tip: '"Buitenspelers breed op de kalklijn openen de half-spaces voor de middenvelders!"',
+                        ball: { x: 0.56, y: 0.62 },
+                        home: [
+                            [0.10, 0.50], [0.46, 0.16], [0.38, 0.36], [0.38, 0.64], [0.54, 0.90],
+                            [0.48, 0.48], [0.58, 0.34], [0.56, 0.62], [0.72, 0.14], [0.76, 0.50], [0.72, 0.88]
+                        ],
+                        away: [
+                            [0.96, 0.50], [0.78, 0.18], [0.80, 0.40], [0.80, 0.60], [0.76, 0.80],
+                            [0.68, 0.52], [0.60, 0.34], [0.60, 0.64], [0.48, 0.24], [0.42, 0.50], [0.48, 0.76]
+                        ],
+                        triangles: [[4, 7, 10], [5, 6, 7], [7, 9, 10]]
+                    },
+                    {
+                        title: 'Fase 2: Buitenspeler naar binnen & Overlap Rechtsback',
+                        desc: 'RCM speelt RA aan die naar binnen dribbelt. Rechtsback (RB) klapt er op volle snelheid overheen langs de lijn.',
+                        tip: '"Buitenspeler naar binnen = back eroverheen voor een 2-tegen-1 op de flank!"',
+                        ball: { x: 0.72, y: 0.78 },
+                        home: [
+                            [0.12, 0.50], [0.50, 0.20], [0.42, 0.38], [0.42, 0.64], [0.76, 0.92],
+                            [0.54, 0.50], [0.68, 0.36], [0.66, 0.62], [0.78, 0.20], [0.80, 0.48], [0.72, 0.78]
+                        ],
+                        away: [
+                            [0.96, 0.50], [0.80, 0.22], [0.82, 0.42], [0.80, 0.62], [0.76, 0.78],
+                            [0.72, 0.54], [0.64, 0.38], [0.64, 0.66], [0.52, 0.26], [0.46, 0.50], [0.52, 0.76]
+                        ],
+                        triangles: [[4, 7, 10], [7, 9, 10], [5, 6, 7]]
+                    },
+                    {
+                        title: 'Fase 3: Steekpass op RB & kruisen voor het doel',
+                        desc: 'RA geeft de bal mee aan RB. In de 16-meter kruisen SP (1e paal), LA (2e paal) en LCM (penaltystip).',
+                        tip: '"Restverdediging achterin: LCV, RCV, LB en CVM bewaken samen het centrum!"',
+                        ball: { x: 0.88, y: 0.86 },
+                        home: [
+                            [0.14, 0.50], [0.54, 0.26], [0.46, 0.42], [0.46, 0.62], [0.88, 0.86],
+                            [0.60, 0.52], [0.80, 0.42], [0.76, 0.64], [0.86, 0.26], [0.88, 0.54], [0.80, 0.74]
+                        ],
+                        away: [
+                            [0.96, 0.52], [0.86, 0.28], [0.88, 0.46], [0.86, 0.60], [0.84, 0.78],
+                            [0.78, 0.54], [0.72, 0.42], [0.72, 0.68], [0.56, 0.30], [0.50, 0.50], [0.56, 0.74]
+                        ],
+                        triangles: [[1, 2, 5], [2, 3, 5], [6, 8, 9], [4, 7, 10]]
+                    },
+                    {
+                        title: 'Fase 4: Aangesneden voorzet & doelpunt!',
+                        desc: 'RB geeft een scherpe boogvoorzet tussen keeper en laatste linie door die bij de penaltystip wordt binnengewerkt.',
+                        tip: '"Linksbuiten (LA) sluit altijd bij de tweede paal op voor een doorschietende bal!"',
+                        ball: { x: 0.96, y: 0.46, arc: 0.95 },
+                        home: [
+                            [0.14, 0.50], [0.54, 0.26], [0.46, 0.42], [0.46, 0.62], [0.90, 0.84],
+                            [0.62, 0.52], [0.86, 0.44], [0.80, 0.62], [0.90, 0.32], [0.90, 0.54], [0.82, 0.72]
+                        ],
+                        away: [
+                            [0.96, 0.50], [0.88, 0.32], [0.90, 0.48], [0.88, 0.60], [0.86, 0.76],
+                            [0.80, 0.54], [0.74, 0.44], [0.74, 0.66], [0.56, 0.30], [0.50, 0.50], [0.56, 0.74]
+                        ],
+                        triangles: [[1, 2, 5], [2, 3, 5], [6, 8, 9]]
+                    }
+                ]);
+            }
+
+            if (scenarioKey === 'omschakeling') {
+                return createStructuredScenario(baseRoles, awayRoles, [], [
+                    {
+                        title: 'Fase 1: Balverlies & Gegenpressing (5-seconden regel)',
+                        desc: 'De bal gaat verloren. De spelers rond de bal zetten direct druk om een snelle dieptepass te blokkeren.',
+                        tip: '"5-seconden regel: niet direct heroverd? Dan sprint het hele team in een trechter terug!"',
+                        ball: { x: 0.74, y: 0.64 },
+                        home: [
+                            [0.12, 0.50], [0.48, 0.16], [0.42, 0.38], [0.42, 0.64], [0.56, 0.88],
+                            [0.52, 0.50], [0.64, 0.34], [0.68, 0.64], [0.74, 0.18], [0.78, 0.48], [0.74, 0.82]
+                        ],
+                        away: [
+                            [0.95, 0.50], [0.76, 0.18], [0.78, 0.40], [0.74, 0.64], [0.74, 0.84],
+                            [0.64, 0.50], [0.56, 0.32], [0.58, 0.68], [0.42, 0.22], [0.38, 0.50], [0.42, 0.78]
+                        ],
+                        triangles: [[1, 2, 5], [2, 3, 5]]
+                    },
+                    {
+                        title: 'Fase 2: Compact blok vormen (1-4-5-1 organisatie)',
+                        desc: 'Het elftal zakt compact terug. Buitenspelers LA en RA sluiten aan op de lijn van het middenveld.',
+                        tip: '"Houd de lengte van het elftal tussen laatste linie en spits op maximaal 25-30 meter!"',
+                        ball: { x: 0.56, y: 0.74 },
+                        home: [
+                            [0.08, 0.50], [0.30, 0.26], [0.28, 0.42], [0.28, 0.58], [0.30, 0.74],
+                            [0.38, 0.52], [0.44, 0.38], [0.44, 0.64], [0.50, 0.28], [0.56, 0.52], [0.50, 0.74]
+                        ],
+                        away: [
+                            [0.92, 0.50], [0.68, 0.20], [0.72, 0.42], [0.70, 0.64], [0.64, 0.84],
+                            [0.58, 0.50], [0.48, 0.28], [0.56, 0.74], [0.36, 0.20], [0.32, 0.48], [0.36, 0.78]
+                        ],
+                        triangles: [[1, 2, 6], [2, 3, 5], [3, 4, 7], [5, 6, 7]]
+                    },
+                    {
+                        title: 'Fase 3: Kantelen naar de balkant (Pressing-val)',
+                        desc: 'De tegenstander speelt naar de zijkant. Ons hele elftal kantelt mee en sluit de vleugelspeler volledig in.',
+                        tip: '"Verste back (LB) knijpt helemaal naar binnen tot de as van het veld!"',
+                        ball: { x: 0.40, y: 0.84 },
+                        home: [
+                            [0.06, 0.54], [0.26, 0.42], [0.24, 0.54], [0.24, 0.68], [0.32, 0.82],
+                            [0.34, 0.62], [0.40, 0.48], [0.38, 0.74], [0.46, 0.40], [0.48, 0.64], [0.42, 0.84]
+                        ],
+                        away: [
+                            [0.90, 0.50], [0.66, 0.22], [0.68, 0.44], [0.68, 0.66], [0.58, 0.86],
+                            [0.52, 0.54], [0.44, 0.30], [0.48, 0.74], [0.32, 0.22], [0.28, 0.52], [0.40, 0.84]
+                        ],
+                        triangles: [[2, 3, 5], [3, 4, 7], [4, 7, 10], [5, 7, 9]]
+                    },
+                    {
+                        title: 'Fase 4: Balverovering & razendsnelle counter!',
+                        desc: 'RB en RCM veroveren de bal en spelen direct vooruit op de spits (9), terwijl LA en RA diepte maken.',
+                        tip: '"Bij balwinst: eerste blik altijd diep op de spits of diagonaal naar de vrije vleugel!"',
+                        ball: { x: 0.56, y: 0.52 },
+                        home: [
+                            [0.08, 0.50], [0.32, 0.32], [0.26, 0.48], [0.28, 0.66], [0.38, 0.82],
+                            [0.40, 0.58], [0.48, 0.42], [0.46, 0.72], [0.64, 0.20], [0.56, 0.52], [0.62, 0.82]
+                        ],
+                        away: [
+                            [0.90, 0.50], [0.66, 0.22], [0.68, 0.44], [0.68, 0.66], [0.58, 0.86],
+                            [0.52, 0.54], [0.44, 0.30], [0.46, 0.74], [0.32, 0.22], [0.30, 0.52], [0.36, 0.84]
+                        ],
+                        triangles: [[5, 6, 9], [6, 8, 9], [7, 9, 10]]
+                    }
+                ]);
+            }
+
+            if (scenarioKey === 'spelhervatting') {
+                return createStructuredScenario(baseRoles, awayRoles, [], [
+                    {
+                        title: 'Fase 1: Ingooi hoog op de helft van de tegenstander',
+                        desc: 'Linksback (LB) neemt de ingooi. LA, LCM (8) en CVM (6) vormen een driehoek rond de zijlijn.',
+                        tip: '"Houd de ruimte langs de lijn eerst vrij voordat je erin sprint!"',
+                        ball: { x: 0.55, y: 0.02 },
+                        home: [
+                            [0.08, 0.50], [0.55, 0.03], [0.36, 0.28], [0.36, 0.58], [0.42, 0.82],
+                            [0.48, 0.34], [0.56, 0.24], [0.58, 0.56], [0.68, 0.14], [0.70, 0.44], [0.68, 0.80]
+                        ],
+                        away: [
+                            [0.95, 0.50], [0.74, 0.20], [0.76, 0.40], [0.76, 0.62], [0.74, 0.82],
+                            [0.60, 0.38], [0.56, 0.20], [0.58, 0.52], [0.44, 0.32], [0.42, 0.48], [0.46, 0.74]
+                        ],
+                        triangles: [[1, 2, 5], [1, 5, 6], [6, 8, 9]]
+                    },
+                    {
+                        title: 'Fase 2: Kruisloop tussen Linksbuiten (LA) en Linkshalf (8)',
+                        desc: 'LA komt in de bal en neemt zijn back mee; LCM (8) sprint precies in de ruimte die LA achterlaat!',
+                        tip: '"Wissel van positie: de één komt in de bal, de ander duikt de diepte in!"',
+                        ball: { x: 0.55, y: 0.02 },
+                        home: [
+                            [0.08, 0.50], [0.55, 0.03], [0.38, 0.26], [0.38, 0.56], [0.44, 0.80],
+                            [0.48, 0.30], [0.68, 0.10], [0.60, 0.52], [0.60, 0.16], [0.72, 0.40], [0.70, 0.78]
+                        ],
+                        away: [
+                            [0.95, 0.50], [0.64, 0.18], [0.76, 0.38], [0.76, 0.60], [0.74, 0.80],
+                            [0.60, 0.36], [0.62, 0.16], [0.58, 0.50], [0.44, 0.30], [0.42, 0.48], [0.46, 0.74]
+                        ],
+                        triangles: [[1, 5, 8], [5, 6, 8], [6, 8, 9]]
+                    },
+                    {
+                        title: 'Fase 3: Ingooi op LA, kaats op CVM (6) & dieptepass',
+                        desc: 'LB gooit op LA (arc), die kaatst op de inkomende CVM (6). CVM steekt de bal direct weg op de diepgaande LCM (8).',
+                        tip: '"De ingooier (LB) stapt na zijn worp direct het veld in voor de driehoek."',
+                        ball: { x: 0.52, y: 0.24, arc: 0.45 },
+                        home: [
+                            [0.08, 0.50], [0.54, 0.08], [0.40, 0.26], [0.40, 0.56], [0.46, 0.80],
+                            [0.52, 0.24], [0.74, 0.12], [0.64, 0.50], [0.60, 0.18], [0.76, 0.40], [0.74, 0.76]
+                        ],
+                        away: [
+                            [0.95, 0.50], [0.64, 0.20], [0.76, 0.36], [0.76, 0.58], [0.74, 0.78],
+                            [0.60, 0.34], [0.66, 0.16], [0.60, 0.48], [0.46, 0.30], [0.44, 0.48], [0.48, 0.74]
+                        ],
+                        triangles: [[1, 5, 8], [5, 6, 8], [5, 7, 9]]
+                    },
+                    {
+                        title: 'Fase 4: Vrije doortocht en voorzet vanaf links',
+                        desc: 'LCM (8) is vrij op de flank en kan de voorzet geven op SP (9), RCM (10) en RA bij de tweede paal.',
+                        tip: '"Zo creëer je uit een simpele ingooi binnen 4 seconden een grote kans!"',
+                        ball: { x: 0.82, y: 0.16 },
+                        home: [
+                            [0.10, 0.50], [0.58, 0.14], [0.44, 0.30], [0.44, 0.56], [0.50, 0.78],
+                            [0.58, 0.32], [0.82, 0.16], [0.78, 0.50], [0.68, 0.24], [0.84, 0.42], [0.84, 0.68]
+                        ],
+                        away: [
+                            [0.95, 0.50], [0.74, 0.22], [0.82, 0.38], [0.82, 0.56], [0.80, 0.74],
+                            [0.68, 0.38], [0.72, 0.22], [0.68, 0.50], [0.50, 0.32], [0.48, 0.48], [0.52, 0.72]
+                        ],
+                        triangles: [[6, 8, 9], [7, 9, 10], [5, 7, 8]]
+                    }
+                ]);
+            }
+
+            const formCoords = [
+                [
+                    [0.04, 0.50], [0.22, 0.12], [0.18, 0.36], [0.18, 0.64], [0.22, 0.88],
+                    [0.34, 0.50], [0.46, 0.32], [0.46, 0.68], [0.68, 0.15], [0.72, 0.50], [0.68, 0.85]
+                ],
+                [
+                    [0.04, 0.50], [0.22, 0.12], [0.18, 0.36], [0.18, 0.64], [0.22, 0.88],
+                    [0.44, 0.15], [0.38, 0.40], [0.46, 0.60], [0.44, 0.85], [0.70, 0.36], [0.70, 0.64]
+                ],
+                [
+                    [0.04, 0.50], [0.18, 0.25], [0.16, 0.50], [0.18, 0.75], [0.44, 0.10],
+                    [0.44, 0.34], [0.34, 0.50], [0.44, 0.66], [0.44, 0.90], [0.70, 0.36], [0.70, 0.64]
+                ]
+            ][subIdx] || [
+                [0.04, 0.50], [0.22, 0.12], [0.18, 0.36], [0.18, 0.64], [0.22, 0.88],
+                [0.34, 0.50], [0.46, 0.32], [0.46, 0.68], [0.68, 0.15], [0.72, 0.50], [0.68, 0.85]
+            ];
+
+            return buildFormationMovementScenario(baseRoles, awayRoles, formCoords, SUB_FORMATIONS['11v11'][subIdx]?.name || '1-4-3-3');
+        }
+
+        /* -------------------- TRAININGSVORMEN (RONDO & POSITIESPEL) -------------------- */
+        function buildTrainingScenario(scenarioKey, subIdx) {
+            if (subIdx === 1) {
+                const homeRoles = [['S1','Noord'], ['S2','West'], ['S3','Zuid'], ['S4','Oost']];
+                const awayRoles = [['J1','Jager']];
+                return createStructuredScenario(homeRoles, awayRoles, [], [
+                    {
+                        title: 'Fase 1: Rondo 4 tegen 1 – Passhoeken bezetten',
+                        desc: 'S2 heeft de bal. S1 en S3 bieden zich aan de zijkanten aan zodat S2 altijd twee directe afspeelopties heeft.',
+                        tip: '"Sta nooit in de dekkingsschaduw achter de jager, maar beweeg in de vrije hoek!"',
+                        ball: { x: 0.30, y: 0.50 },
+                        home: [[0.48, 0.20], [0.28, 0.50], [0.48, 0.80], [0.72, 0.50]],
+                        away: [[0.42, 0.48]],
+                        triangles: [[0, 1, 2], [0, 2, 3]]
+                    },
+                    {
+                        title: 'Fase 2: Pass naar de zijkant & ondersteunen',
+                        desc: 'S2 speelt S1 aan. Direct schuift S4 langs zijn lijn omhoog om de verre passhoek te openen.',
+                        tip: '"Open aannemen op je verste voet voor maximaal baltempo!"',
+                        ball: { x: 0.48, y: 0.20 },
+                        home: [[0.48, 0.20], [0.30, 0.44], [0.52, 0.80], [0.72, 0.38]],
+                        away: [[0.48, 0.34]],
+                        triangles: [[0, 1, 3], [1, 2, 3]]
+                    },
+                    {
+                        title: 'Fase 3: Doordraaien naar S4 & jager laten lopen',
+                        desc: 'S1 tikt door naar S4. Terwijl de jager (J1) kantelt, zakken S2 en S3 alweer in de nieuwe passlijnen.',
+                        tip: '"Laat de bal het werk doen: maximaal 1 of 2 keer raken."',
+                        ball: { x: 0.72, y: 0.46 },
+                        home: [[0.52, 0.20], [0.28, 0.52], [0.54, 0.80], [0.72, 0.46]],
+                        away: [[0.60, 0.44]],
+                        triangles: [[0, 2, 3], [0, 1, 2]]
+                    },
+                    {
+                        title: 'Fase 4: Split-pass dwars door het midden!',
+                        desc: 'Omdat J1 te gretig naar de zijkant stapt, speelt S4 de bal strak dwars door het vak terug naar S2.',
+                        tip: '"Een pass dwars door het midden levert een bonuspunt op!"',
+                        ball: { x: 0.30, y: 0.52 },
+                        home: [[0.48, 0.20], [0.28, 0.52], [0.48, 0.80], [0.72, 0.50]],
+                        away: [[0.52, 0.48]],
+                        triangles: [[0, 1, 2], [0, 2, 3]]
+                    }
+                ]);
+            }
+
+            if (subIdx === 2) {
+                const homeRoles = [['S1','Links-B'], ['S2','Rechts-B'], ['S3','Links'], ['S4','Rechts'], ['S5','Links-O'], ['S6','Rechts-O']];
+                const awayRoles = [['J1','Jager 1'], ['J2','Jager 2']];
+                return createStructuredScenario(homeRoles, awayRoles, [], [
+                    {
+                        title: 'Fase 1: Rondo 6 tegen 2 – Veld breed houden',
+                        desc: 'Zes spelers op de lijnen houden de bal in de ploeg tegen twee jagers die samen druk zetten.',
+                        tip: '"Staan de twee jagers op één lijn? Zoek dan direct de split-pass tussen hen door!"',
+                        ball: { x: 0.28, y: 0.50 },
+                        home: [[0.38, 0.20], [0.62, 0.20], [0.26, 0.50], [0.74, 0.50], [0.38, 0.80], [0.62, 0.80]],
+                        away: [[0.38, 0.46], [0.52, 0.54]],
+                        triangles: [[0, 2, 4], [0, 1, 2], [1, 3, 5]]
+                    },
+                    {
+                        title: 'Fase 2: Kort-kort combineren om de jagers te lokken',
+                        desc: 'S3 en S1 spelen elkaar kort aan zodat beide jagers naar één hoek worden gezogen.',
+                        tip: '"Kort-kort-lang: lok de verdedigers naar één kant zodat de overkant vrijkomt."',
+                        ball: { x: 0.38, y: 0.22 },
+                        home: [[0.38, 0.20], [0.64, 0.20], [0.26, 0.44], [0.74, 0.50], [0.40, 0.80], [0.64, 0.80]],
+                        away: [[0.38, 0.32], [0.46, 0.40]],
+                        triangles: [[0, 1, 2], [0, 1, 3], [2, 4, 5]]
+                    },
+                    {
+                        title: 'Fase 3: De Split-pass tussen beide jagers door!',
+                        desc: 'S1 ziet het gat tussen J1 en J2 en geeft een strakke pass dwars door het midden naar S6.',
+                        tip: '"Scan al vóór je aanname waar het gat tussen de twee verdedigers ligt."',
+                        ball: { x: 0.62, y: 0.78 },
+                        home: [[0.38, 0.20], [0.62, 0.20], [0.26, 0.50], [0.74, 0.48], [0.38, 0.80], [0.62, 0.80]],
+                        away: [[0.44, 0.42], [0.54, 0.56]],
+                        triangles: [[3, 4, 5], [1, 3, 5]]
+                    },
+                    {
+                        title: 'Fase 4: Direct uit de druk tikken via S4',
+                        desc: 'S6 legt de bal in één keer breed op S4 en de zes buitenspelers staan direct weer in balans.',
+                        tip: '"Blijf lichtvoetig op de voorvoeten bewegen!"',
+                        ball: { x: 0.74, y: 0.50 },
+                        home: [[0.38, 0.20], [0.62, 0.20], [0.26, 0.50], [0.74, 0.50], [0.38, 0.80], [0.62, 0.80]],
+                        away: [[0.54, 0.44], [0.62, 0.56]],
+                        triangles: [[1, 3, 5], [0, 1, 3]]
+                    }
+                ]);
+            }
+
+            const homeRoles = [['CV','Onder'], ['LV','Links'], ['RV','Rechts'], ['SP','Boven']];
+            const awayRoles = [['V1','Druk 1'], ['V2','Druk 2'], ['V3','As 1'], ['V4','As 2']];
+            const neutralRoles = [['N1','Kopspeler'], ['N2','Spelverdeler']];
+
+            return createStructuredScenario(homeRoles, awayRoles, neutralRoles, [
+                {
+                    title: 'Fase 1: Positiespel 4v4 + 2 Neutrale Spelers (6 tegen 4)',
+                    desc: 'Oranje heeft balbezit samen met de 2 Gouden neutrale spelers. N2 biedt zich centraal tussen de linies aan.',
+                    tip: '"De centrale neutrale speler (N2) moet voortdurend vrij bewegen in de rug van de eerste drukzetters!"',
+                    ball: { x: 0.24, y: 0.50 },
+                    home: [[0.22, 0.50], [0.46, 0.16], [0.46, 0.84], [0.76, 0.36]],
+                    away: [[0.36, 0.46], [0.52, 0.34], [0.52, 0.66], [0.66, 0.50]],
+                    neutral: [[0.76, 0.66], [0.48, 0.50]],
+                    triangles: [[0, 1, 2]]
+                },
+                {
+                    title: 'Fase 2: Inspelen op de centrale neutrale speler (N2)',
+                    desc: 'Vanuit achteren wordt N2 aangespeeld in het hart van het vak. Blauw knijpt naar binnen.',
+                    tip: '"Speel het midden in om ruimte aan de zijkanten vrij te spelen!"',
+                    ball: { x: 0.48, y: 0.50 },
+                    home: [[0.24, 0.48], [0.48, 0.16], [0.50, 0.84], [0.76, 0.34]],
+                    away: [[0.38, 0.48], [0.48, 0.38], [0.48, 0.62], [0.64, 0.50]],
+                    neutral: [[0.76, 0.66], [0.48, 0.50]],
+                    triangles: [[0, 1, 3], [0, 2, 3]]
+                },
+                {
+                    title: 'Fase 3: Kaatsen naar de vrije buitenkant (LV)',
+                    desc: 'N2 kaatst de bal in één keer naar de vrijstaande linkerspeler (LV) die nu vrij vooruit kan kijken.',
+                    tip: '"Via het centrum naar de buitenkant, en van de buitenkant naar de overkant!"',
+                    ball: { x: 0.48, y: 0.16 },
+                    home: [[0.26, 0.50], [0.48, 0.16], [0.52, 0.84], [0.76, 0.34]],
+                    away: [[0.42, 0.36], [0.48, 0.28], [0.54, 0.58], [0.66, 0.44]],
+                    neutral: [[0.76, 0.66], [0.54, 0.46]],
+                    triangles: [[0, 1, 3], [1, 2, 3]]
+                },
+                {
+                    title: 'Fase 4: Van kop-naar-kop combineren (Punt gescoord)',
+                    desc: 'LV bereikt de kopspeler (N1) aan de overzijde van het vak. Het positiespel kantelt direct voor de terugweg.',
+                    tip: '"Scoor punten door gecontroleerd van de ene kopspeler naar de andere kopspeler te spelen!"',
+                    ball: { x: 0.76, y: 0.66 },
+                    home: [[0.26, 0.50], [0.50, 0.18], [0.54, 0.84], [0.76, 0.34]],
+                    away: [[0.46, 0.42], [0.54, 0.34], [0.62, 0.60], [0.68, 0.50]],
+                    neutral: [[0.76, 0.66], [0.52, 0.48]],
+                    triangles: [[1, 2, 3]]
+                }
+            ]);
+        }
+
+        function buildFormationMovementScenario(homeRoles, awayRoles, baseHomeCoords, formationName) {
+            const baseAwayCoords = baseHomeCoords.map(([x, y]) => [1 - x, 1 - y]);
+
+            const shiftCoords = (coords, dx, dy, compressY = 1.0) => {
+                return coords.map(([x, y], idx) => {
+                    if (idx === 0 && homeRoles[0][0] === 'K') {
+                        return [Math.min(0.14, Math.max(0.04, x + dx * 0.3)), Math.min(0.62, Math.max(0.38, y + dy * 0.25))];
+                    }
+                    let nx = Math.min(0.92, Math.max(0.08, x + dx));
+                    let ny = 0.5 + (y - 0.5) * compressY + dy;
+                    ny = Math.min(0.93, Math.max(0.07, ny));
+                    return [nx, ny];
+                });
+            };
+
+            const autoTriangles = computeDelaunayLikeTriangles(baseHomeCoords);
+
+            return createStructuredScenario(homeRoles, awayRoles, [], [
+                {
+                    title: `Fase 1: Basisformatie ${formationName} (Centrum)`,
+                    desc: `Standaard veldbezetting in ${formationName}. Let op de onderlinge afstanden en natuurlijke speeldriehoeken.`,
+                    tip: `"Zorg dat je nooit op exact dezelfde lijn staat als je directe buurman."`,
+                    ball: { x: baseHomeCoords[0][0] + 0.02, y: baseHomeCoords[0][1] },
+                    home: baseHomeCoords,
+                    away: baseAwayCoords,
+                    triangles: autoTriangles
+                },
+                {
+                    title: `Fase 2: ${formationName} – Kantelen naar Links`,
+                    desc: 'De bal is op de linkerflank. Het hele team schuift als één harmonica mee naar links en knijpt rechts naar binnen.',
+                    tip: '"Als de bal links is, sluit de rechterkant tot aan de as van het veld aan!"',
+                    ball: { x: 0.45, y: 0.16 },
+                    home: shiftCoords(baseHomeCoords, 0.06, -0.14, 0.82),
+                    away: shiftCoords(baseAwayCoords, -0.05, -0.10, 0.85),
+                    triangles: autoTriangles
+                },
+                {
+                    title: `Fase 3: ${formationName} – Kantelen naar Rechts`,
+                    desc: 'Het spel wordt verlegd naar de rechtervleugel. Alle linies kantelen synchroon mee om de driehoeken te bewaren.',
+                    tip: '"Bewaar tijdens het kantelen de vaste onderlinge afstanden tussen de linies."',
+                    ball: { x: 0.52, y: 0.84, arc: 0.55 },
+                    home: shiftCoords(baseHomeCoords, 0.08, 0.14, 0.82),
+                    away: shiftCoords(baseAwayCoords, -0.06, 0.10, 0.85),
+                    triangles: autoTriangles
+                },
+                {
+                    title: `Fase 4: ${formationName} – Hoog Aansluiten`,
+                    desc: 'Bij druk op de helft van de tegenstander schuift de laatste linie mee op tot aan de middenlijn.',
+                    tip: '"Hoog aansluiten houdt het veld klein zodat afvallende ballen direct voor ons zijn!"',
+                    ball: { x: 0.74, y: 0.50 },
+                    home: shiftCoords(baseHomeCoords, 0.18, 0.0, 0.92),
+                    away: shiftCoords(baseAwayCoords, 0.10, 0.0, 0.78),
+                    triangles: autoTriangles
+                }
+            ]);
+        }
+
+        function computeDelaunayLikeTriangles(coords) {
+            const tris = [];
+            const n = coords.length;
+            if (n < 3) return tris;
+            for (let i = 0; i < n; i++) {
+                const dists = [];
+                for (let j = 0; j < n; j++) {
+                    if (i === j) continue;
+                    dists.push({ idx: j, d: Math.hypot(coords[i][0] - coords[j][0], coords[i][1] - coords[j][1]) });
+                }
+                dists.sort((a, b) => a.d - b.d);
+                if (dists.length >= 2) {
+                    const tri = [i, dists[0].idx, dists[1].idx].sort((a, b) => a - b);
+                    const key = tri.join('-');
+                    if (!tris.some(t => t.join('-') === key)) tris.push(tri);
+                }
+            }
+            return tris.slice(0, 5);
+        }
+
+        function createStructuredScenario(homeRoles, awayRoles, neutralRoles, phasesRaw) {
+            return {
+                homePlayers: homeRoles.map(([role, name]) => ({ role, name })),
+                awayPlayers: awayRoles.map(([role, name]) => ({ role, name })),
+                neutralPlayers: (neutralRoles || []).map(([role, name]) => ({ role, name })),
+                phases: phasesRaw.map(p => ({
+                    title: p.title,
+                    desc: p.desc,
+                    tip: p.tip,
+                    ball: { x: p.ball.x, y: p.ball.y, arc: p.ball.arc || 0 },
+                    home: p.home.map(([x, y]) => ({ x, y })),
+                    away: p.away.map(([x, y]) => ({ x, y })),
+                    neutral: (p.neutral || []).map(([x, y]) => ({ x, y })),
+                    triangles: p.triangles || []
+                }))
+            };
+        }
+
+        /**************************************************************************
+         * 3. COORDINATE TRANSFORMATION & GRASS TEXTURE GENERATOR
+         **************************************************************************/
+        function createGrassNoisePattern() {
+            const c = document.createElement('canvas');
+            c.width = 96;
+            c.height = 96;
+            const gctx = c.getContext('2d');
+            for (let y = 0; y < 96; y += 2) {
+                for (let x = 0; x < 96; x += 2) {
+                    const v = Math.random();
+                    if (v > 0.62) {
+                        gctx.fillStyle = 'rgba(255, 255, 255, 0.018)';
+                        gctx.fillRect(x, y, 2, 2);
+                    } else if (v < 0.25) {
+                        gctx.fillStyle = 'rgba(0, 0, 0, 0.025)';
+                        gctx.fillRect(x, y, 2, 2);
+                    }
+                }
+            }
+            grassPatternCanvas = c;
+        }
+
+        function logicalToCanvas(lx, ly) {
+            if (!isVertical) {
+                return {
+                    x: pitchRect.left + lx * pitchRect.width,
+                    y: pitchRect.top + ly * pitchRect.height
+                };
+            } else {
+                return {
+                    x: pitchRect.left + ly * pitchRect.width,
+                    y: pitchRect.top + (1 - lx) * pitchRect.height
+                };
+            }
+        }
+
+        function canvasToLogical(cx, cy) {
+            if (!isVertical) {
+                return {
+                    x: Math.min(0.99, Math.max(0.01, (cx - pitchRect.left) / pitchRect.width)),
+                    y: Math.min(0.99, Math.max(0.01, (cy - pitchRect.top) / pitchRect.height))
+                };
+            } else {
+                return {
+                    x: Math.min(0.99, Math.max(0.01, 1 - (cy - pitchRect.top) / pitchRect.height)),
+                    y: Math.min(0.99, Math.max(0.01, (cx - pitchRect.left) / pitchRect.width))
+                };
+            }
+        }
+
+        /**************************************************************************
+         * 4. PHOTOREALISTIC BROADCAST PITCH & 3D GOALS RENDERER
+         **************************************************************************/
+        function resizeCanvas() {
+            const wrapper = document.getElementById('canvasWrapper');
+            const availW = Math.max(320, wrapper.clientWidth);
+            const availH = Math.max(280, wrapper.clientHeight);
+            const dpr = window.devicePixelRatio || 1;
+
+            let aspect = isVertical ? 0.68 : 1.56;
+            if (currentFormat === 'training') {
+                aspect = isVertical ? 0.85 : 1.32;
+            }
+
+            let cssWidth = availW;
+            let cssHeight = Math.round(cssWidth / aspect);
+
+            if (cssHeight > availH) {
+                cssHeight = availH;
+                cssWidth = Math.round(cssHeight * aspect);
+            }
+
+            canvas.style.width = cssWidth + 'px';
+            canvas.style.height = cssHeight + 'px';
+            canvas.width = Math.round(cssWidth * dpr);
+            canvas.height = Math.round(cssHeight * dpr);
+
+            ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+            const margin = Math.max(28, Math.round(Math.min(cssWidth, cssHeight) * 0.068));
+            pitchRect = {
+                left: margin,
+                top: margin,
+                width: cssWidth - margin * 2,
+                height: cssHeight - margin * 2,
+                cssWidth,
+                cssHeight
+            };
+
+            drawScene();
+        }
+
+        function drawPitchBackground() {
+            const { left, top, width, height, cssWidth, cssHeight } = pitchRect;
+
+            ctx.clearRect(0, 0, cssWidth, cssHeight);
+
+            // 1. Luxury 3D Stadium Board Base with rounded corners & shadow
+            ctx.save();
+            const boardPad = Math.max(18, Math.min(left, top) * 0.72);
+            const bx = left - boardPad;
+            const by = top - boardPad;
+            const bw = width + boardPad * 2;
+            const bh = height + boardPad * 2;
+
+            ctx.shadowColor = 'rgba(0, 0, 0, 0.85)';
+            ctx.shadowBlur = 35;
+            ctx.shadowOffsetY = 16;
+
+            // Dark metallic stadium surround
+            const boardGrad = ctx.createLinearGradient(bx, by, bx, by + bh);
+            boardGrad.addColorStop(0, '#0f291e');
+            boardGrad.addColorStop(1, '#071710');
+            ctx.fillStyle = boardGrad;
+            ctx.beginPath();
+            ctx.roundRect(bx, by, bw, bh, 22);
+            ctx.fill();
+
+            // Subtle 3D rim border around the tactical board
+            ctx.shadowColor = 'transparent';
+            ctx.lineWidth = 1.5;
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.12)';
+            ctx.stroke();
+            ctx.restore();
+
+            // 2. Clip inner turf & draw alternating emerald mowed grass bands
+            ctx.save();
+            ctx.beginPath();
+            ctx.roundRect(left - 6, top - 6, width + 12, height + 12, 10);
+            ctx.clip();
+
+            const numStripes = currentFormat === '11v11' ? 14 : (currentFormat === '8v8' ? 10 : 8);
+            for (let i = 0; i < numStripes; i++) {
+                ctx.fillStyle = i % 2 === 0 ? '#136f3a' : '#0f5c30';
+                if (!isVertical) {
+                    const sw = width / numStripes;
+                    ctx.fillRect(left + i * sw, top - 6, sw + 0.6, height + 12);
+                } else {
+                    const sh = height / numStripes;
+                    ctx.fillRect(left - 6, top + i * sh, width + 12, sh + 0.6);
+                }
+            }
+
+            // Cross-cut subtle mowing sheen
+            const crossStripes = 6;
+            for (let j = 0; j < crossStripes; j++) {
+                ctx.fillStyle = j % 2 === 0 ? 'rgba(255, 255, 255, 0.015)' : 'rgba(0, 0, 0, 0.015)';
+                if (!isVertical) {
+                    const ch = height / crossStripes;
+                    ctx.fillRect(left - 6, top + j * ch, width + 12, ch);
+                } else {
+                    const cw = width / crossStripes;
+                    ctx.fillRect(left + j * cw, top - 6, cw, height + 12);
+                }
+            }
+
+            // Fine grass micro-texture
+            if (grassPatternCanvas) {
+                const pat = ctx.createPattern(grassPatternCanvas, 'repeat');
+                ctx.fillStyle = pat;
+                ctx.fillRect(left - 6, top - 6, width + 12, height + 12);
+            }
+
+            // Stadium Floodlight Radial Illumination
+            const lightGrad = ctx.createRadialGradient(
+                left + width * 0.5, top + height * 0.5, Math.min(width, height) * 0.08,
+                left + width * 0.5, top + height * 0.5, Math.max(width, height) * 0.78
+            );
+            lightGrad.addColorStop(0, 'rgba(134, 239, 172, 0.11)');
+            lightGrad.addColorStop(0.55, 'rgba(16, 185, 129, 0.02)');
+            lightGrad.addColorStop(1, 'rgba(0, 0, 0, 0.28)');
+            ctx.fillStyle = lightGrad;
+            ctx.fillRect(left - 6, top - 6, width + 12, height + 12);
+            ctx.restore();
+
+            // 3. Crisp Chalk Lines with subtle broadcast glow
+            ctx.save();
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.88)';
+            ctx.lineWidth = 2.0;
+            ctx.lineJoin = 'round';
+            ctx.shadowColor = 'rgba(255, 255, 255, 0.25)';
+            ctx.shadowBlur = 4;
+
+            // Outer touchline & goal lines
+            ctx.strokeRect(left, top, width, height);
+
+            if (currentFormat === 'training') {
+                ctx.restore();
+                drawTrainingPitchMarkings();
+                return;
+            }
+
+            // Halfway line
+            ctx.beginPath();
+            if (!isVertical) {
+                ctx.moveTo(left + width / 2, top);
+                ctx.lineTo(left + width / 2, top + height);
+            } else {
+                ctx.moveTo(left, top + height / 2);
+                ctx.lineTo(left + width, top + height / 2);
+            }
+            ctx.stroke();
+
+            // Center circle & spot
+            const centerRadius = Math.min(width, height) * (currentFormat === '4v4' ? 0.12 : 0.155);
+            ctx.beginPath();
+            ctx.arc(left + width / 2, top + height / 2, centerRadius, 0, Math.PI * 2);
+            ctx.stroke();
+
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath();
+            ctx.arc(left + width / 2, top + height / 2, 3.2, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Format-specific boxes, arcs, spots, 3D goals & 3D cones
+            if (currentFormat === '4v4') {
+                ctx.restore();
+                draw3DGoal(0, 0.42, 0.58, 0.032);
+                draw3DGoal(1, 0.42, 0.58, 0.032);
+                draw3DCones([[0, 0], [0, 1], [1, 0], [1, 1], [0.5, 0], [0.5, 1]]);
+            } else if (currentFormat === '6v6') {
+                drawBox(0, 0.14, 0.24, 0.76);
+                drawBox(1, 0.14, 0.24, 0.76);
+                ctx.restore();
+                draw3DGoal(0, 0.37, 0.63, 0.036);
+                draw3DGoal(1, 0.37, 0.63, 0.036);
+                draw3DCones([[0.5, 0], [0.5, 1]]);
+            } else if (currentFormat === '8v8') {
+                drawBox(0, 0.16, 0.20, 0.80);
+                drawBox(1, 0.16, 0.20, 0.80);
+                drawSpot(0.11, 0.50);
+                drawSpot(0.89, 0.50);
+                ctx.restore();
+                draw3DGoal(0, 0.36, 0.64, 0.038);
+                draw3DGoal(1, 0.36, 0.64, 0.038);
+            } else if (currentFormat === '11v11') {
+                drawBox(0, 0.165, 0.19, 0.81);
+                drawBox(1, 0.165, 0.19, 0.81);
+                drawBox(0, 0.055, 0.36, 0.64);
+                drawBox(1, 0.055, 0.36, 0.64);
+                drawSpot(0.11, 0.50);
+                drawSpot(0.89, 0.50);
+                drawPenaltyArc(0);
+                drawPenaltyArc(1);
+                drawCornerArcs();
+                ctx.restore();
+                draw3DGoal(0, 0.41, 0.59, 0.038);
+                draw3DGoal(1, 0.41, 0.59, 0.038);
+            }
+        }
+
+        function drawTrainingPitchMarkings() {
+            const p1 = logicalToCanvas(0.20, 0.14);
+            const p2 = logicalToCanvas(0.80, 0.86);
+            const minX = Math.min(p1.x, p2.x);
+            const minY = Math.min(p1.y, p2.y);
+            const w = Math.abs(p2.x - p1.x);
+            const h = Math.abs(p2.y - p1.y);
+
+            // Subtle training grid highlight
+            ctx.save();
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.025)';
+            ctx.fillRect(minX, minY, w, h);
+
+            ctx.setLineDash([8, 6]);
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.82)';
+            ctx.lineWidth = 2.0;
+            ctx.strokeRect(minX, minY, w, h);
+            ctx.restore();
+
+            draw3DCones([
+                [0.20, 0.14], [0.80, 0.14], [0.80, 0.86], [0.20, 0.86],
+                [0.50, 0.14], [0.50, 0.86], [0.20, 0.50], [0.80, 0.50]
+            ]);
+        }
+
+        function draw3DCones(coordsList) {
+            coordsList.forEach(([lx, ly]) => {
+                const pt = logicalToCanvas(lx, ly);
+                ctx.save();
+                // Ground shadow
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.45)';
+                ctx.beginPath();
+                ctx.ellipse(pt.x + 1.5, pt.y + 2.5, 6.5, 4.5, 0, 0, Math.PI * 2);
+                ctx.fill();
+
+                // 3D Cone Base
+                const coneGrad = ctx.createRadialGradient(pt.x - 1.5, pt.y - 1.5, 1, pt.x, pt.y, 6);
+                coneGrad.addColorStop(0, '#fde047');
+                coneGrad.addColorStop(0.55, '#f97316');
+                coneGrad.addColorStop(1, '#c2410c');
+                ctx.fillStyle = coneGrad;
+                ctx.beginPath();
+                ctx.arc(pt.x, pt.y, 5.8, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Inner cone hole highlight
+                ctx.fillStyle = '#fff7ed';
+                ctx.beginPath();
+                ctx.arc(pt.x - 0.5, pt.y - 0.5, 1.6, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            });
+        }
+
+        /**
+         * Draws a realistic 3D-looking football goal with turf shadow, net mesh & gleaming posts
+         */
+        function draw3DGoal(side, y1, y2, depthLogical) {
+            const x0 = side === 0 ? 0 : 1;
+            const x1 = side === 0 ? -depthLogical : 1 + depthLogical;
+            const post1 = logicalToCanvas(x0, y1);
+            const post2 = logicalToCanvas(x0, y2);
+            const back1 = logicalToCanvas(x1, y1);
+            const back2 = logicalToCanvas(x1, y2);
+
+            const rx = Math.min(post1.x, back2.x);
+            const ry = Math.min(post1.y, back2.y);
+            const rw = Math.abs(back2.x - post1.x);
+            const rh = Math.abs(back2.y - post1.y);
+
+            ctx.save();
+
+            // 1. Cast shadow on turf
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.38)';
+            ctx.fillRect(rx + 2, ry + 3, rw, rh);
+
+            // 2. Translucent net body
+            ctx.fillStyle = 'rgba(241, 245, 249, 0.12)';
+            ctx.fillRect(rx, ry, rw, rh);
+
+            // 3. Fine hexagonal / crisscross mesh net lines
+            ctx.save();
+            ctx.beginPath();
+            ctx.rect(rx, ry, rw, rh);
+            ctx.clip();
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.26)';
+            ctx.lineWidth = 0.8;
+            const step = 5;
+            for (let d = -rh; d < rw + rh; d += step) {
+                ctx.beginPath();
+                ctx.moveTo(rx + d, ry);
+                ctx.lineTo(rx + d - rh, ry + rh);
+                ctx.moveTo(rx + d, ry);
+                ctx.lineTo(rx + d + rh, ry + rh);
+                ctx.stroke();
+            }
+            ctx.restore();
+
+            // 4. Back net support frame (subtle dark silver)
+            ctx.strokeStyle = 'rgba(203, 213, 225, 0.65)';
+            ctx.lineWidth = 1.6;
+            ctx.strokeRect(rx, ry, rw, rh);
+
+            // 5. Gleaming white goalposts & crossbar on the goal line
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 3.2;
+            ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
+            ctx.shadowBlur = 4;
+            ctx.beginPath();
+            ctx.moveTo(post1.x, post1.y);
+            ctx.lineTo(post2.x, post2.y);
+            ctx.stroke();
+
+            // Goalpost caps
+            [post1, post2].forEach(p => {
+                ctx.fillStyle = '#ffffff';
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, 3.2, 0, Math.PI * 2);
+                ctx.fill();
+            });
+
+            ctx.restore();
+        }
+
+        function drawBox(side, depthX, minY, maxY) {
+            const x0 = side === 0 ? 0 : 1;
+            const x1 = side === 0 ? depthX : 1 - depthX;
+            const a = logicalToCanvas(x0, minY);
+            const b = logicalToCanvas(x1, maxY);
+            ctx.strokeRect(Math.min(a.x, b.x), Math.min(a.y, b.y), Math.abs(b.x - a.x), Math.abs(b.y - a.y));
+        }
+
+        function drawSpot(lx, ly) {
+            const pt = logicalToCanvas(lx, ly);
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath();
+            ctx.arc(pt.x, pt.y, 3, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        function drawPenaltyArc(side) {
+            const spot = logicalToCanvas(side === 0 ? 0.11 : 0.89, 0.50);
+            const r = Math.min(pitchRect.width, pitchRect.height) * 0.11;
+            ctx.beginPath();
+            if (!isVertical) {
+                if (side === 0) ctx.arc(spot.x, spot.y, r, -0.92, 0.92);
+                else ctx.arc(spot.x, spot.y, r, Math.PI - 0.92, Math.PI + 0.92);
+            } else {
+                if (side === 0) ctx.arc(spot.x, spot.y, r, -Math.PI / 2 - 0.92, -Math.PI / 2 + 0.92);
+                else ctx.arc(spot.x, spot.y, r, Math.PI / 2 - 0.92, Math.PI / 2 + 0.92);
+            }
+            ctx.stroke();
+        }
+
+        function drawCornerArcs() {
+            const { left, top, width, height } = pitchRect;
+            const r = 10;
+            ctx.beginPath();
+            ctx.arc(left, top, r, 0, Math.PI / 2);
+            ctx.moveTo(left + width, top);
+            ctx.arc(left + width, top, r, Math.PI / 2, Math.PI);
+            ctx.moveTo(left + width, top + height);
+            ctx.arc(left + width, top + height, r, Math.PI, Math.PI * 1.5);
+            ctx.moveTo(left, top + height);
+            ctx.arc(left, top + height, r, Math.PI * 1.5, Math.PI * 2);
+            ctx.stroke();
+        }
+
+        /**************************************************************************
+         * 5. INTERPOLATION, BÉZIER ARROWS, BROADCAST PUCKS & 3D BALL PHYSICS
+         **************************************************************************/
+        function easeInOutCubic(t) {
+            return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+        }
+
+        // Realistic ball deceleration: ball travels faster than players and rolls smoothly into feet
+        function easeOutQuart(t) {
+            return 1 - Math.pow(1 - Math.min(1, t * 1.18), 4);
+        }
+
+        function getInterpolatedState() {
+            const phases = activeData.phases;
+            const pA = phases[currentPhaseIndex];
+            const nextIdx = (currentPhaseIndex + 1) % phases.length;
+            const pB = (isPlaying && (currentPhaseIndex < phases.length - 1 || loopEnabled))
+                ? phases[nextIdx]
+                : pA;
+
+            const tPlayer = easeInOutCubic(phaseProgress);
+            const tBall = easeOutQuart(phaseProgress);
+
+            const lerpPt = (a, b, t) => ({
+                x: a.x + (b.x - a.x) * t,
+                y: a.y + (b.y - a.y) * t
+            });
+
+            // Calculate 3D lofted ball height (parabolic arc 4 * h * t * (1 - t))
+            const bDist = Math.hypot(pB.ball.x - pA.ball.x, pB.ball.y - pA.ball.y);
+            const targetArc = pB.ball.arc || (bDist > 0.34 ? 0.55 : 0);
+            const ballElevation = isPlaying && pA !== pB
+                ? Math.sin(Math.min(1, phaseProgress * 1.15) * Math.PI) * targetArc
+                : 0;
+
+            return {
+                pA,
+                pB,
+                ball: lerpPt(pA.ball, pB.ball, tBall),
+                ballElevation,
+                ballTravelDist: bDist * tBall,
+                home: pA.home.map((pt, i) => lerpPt(pt, pB.home[i] || pt, tPlayer)),
+                away: pA.away.map((pt, i) => lerpPt(pt, pB.away[i] || pt, tPlayer)),
+                neutral: (pA.neutral || []).map((pt, i) => lerpPt(pt, (pB.neutral && pB.neutral[i]) || pt, tPlayer)),
+                triangles: pA.triangles || []
+            };
+        }
+
+        function drawScene() {
+            if (!activeData) return;
+            drawPitchBackground();
+
+            const state = getInterpolatedState();
+            const phases = activeData.phases;
+            const currPhase = phases[currentPhaseIndex];
+            const targetPhaseIdx = (currentPhaseIndex < phases.length - 1)
+                ? currentPhaseIndex + 1
+                : (phases.length > 1 ? 0 : currentPhaseIndex);
+            const nextPhaseObj = phases[targetPhaseIdx];
+
+            // 1. Draw Broadcast Tactical Polygons (Speeldriehoeken / Trechter met zachte glow)
+            if (showTriangles && state.triangles && state.triangles.length > 0) {
+                const isPressing = currentScenario === 'omschakeling';
+                state.triangles.forEach(tri => {
+                    const [i1, i2, i3] = tri;
+                    if (!state.home[i1] || !state.home[i2] || !state.home[i3]) return;
+                    const c1 = logicalToCanvas(state.home[i1].x, state.home[i1].y);
+                    const c2 = logicalToCanvas(state.home[i2].x, state.home[i2].y);
+                    const c3 = logicalToCanvas(state.home[i3].x, state.home[i3].y);
+
+                    ctx.save();
+                    ctx.beginPath();
+                    ctx.moveTo(c1.x, c1.y);
+                    ctx.lineTo(c2.x, c2.y);
+                    ctx.lineTo(c3.x, c3.y);
+                    ctx.closePath();
+
+                    const cx = (c1.x + c2.x + c3.x) / 3;
+                    const cy = (c1.y + c2.y + c3.y) / 3;
+                    const polyGrad = ctx.createRadialGradient(cx, cy, 5, cx, cy, 130);
+                    if (isPressing) {
+                        polyGrad.addColorStop(0, 'rgba(244, 63, 94, 0.22)');
+                        polyGrad.addColorStop(1, 'rgba(244, 63, 94, 0.05)');
+                        ctx.strokeStyle = 'rgba(251, 113, 133, 0.48)';
+                    } else {
+                        polyGrad.addColorStop(0, 'rgba(52, 211, 153, 0.20)');
+                        polyGrad.addColorStop(1, 'rgba(250, 204, 21, 0.06)');
+                        ctx.strokeStyle = 'rgba(110, 231, 183, 0.45)';
+                    }
+                    ctx.fillStyle = polyGrad;
+                    ctx.fill();
+
+                    ctx.setLineDash([5, 5]);
+                    ctx.lineDashOffset = -visualTick * 12;
+                    ctx.lineWidth = 1.5;
+                    ctx.stroke();
+                    ctx.restore();
+                });
+            }
+
+            // 2. Draw Curved Bézier Player Movement Arrows & Pass Trajectories
+            if (showPaths && currPhase && nextPhaseObj && currPhase !== nextPhaseObj) {
+                // Player Curved Run Lines
+                currPhase.home.forEach((startPt, i) => {
+                    const endPt = nextPhaseObj.home[i];
+                    if (!endPt) return;
+                    const dist = Math.hypot(endPt.x - startPt.x, endPt.y - startPt.y);
+                    if (dist > 0.035) {
+                        const cStart = logicalToCanvas(startPt.x, startPt.y);
+                        const cEnd = logicalToCanvas(endPt.x, endPt.y);
+                        drawCurvedArrow(cStart.x, cStart.y, cEnd.x, cEnd.y, 'rgba(56, 189, 248, 0.85)', true, 2.2, (i % 2 === 0 ? 1 : -1) * 0.14);
+                    }
+                });
+
+                // Ball Pass Line
+                const bStart = currPhase.ball;
+                const bEnd = nextPhaseObj.ball;
+                const bDist = Math.hypot(bEnd.x - bStart.x, bEnd.y - bStart.y);
+                if (bDist > 0.03) {
+                    const cStart = logicalToCanvas(bStart.x, bStart.y);
+                    const cEnd = logicalToCanvas(bEnd.x, bEnd.y);
+                    const curve = (nextPhaseObj.ball.arc || bDist > 0.34) ? -0.18 : 0;
+                    drawCurvedArrow(cStart.x, cStart.y, cEnd.x, cEnd.y, '#fde047', false, 2.8, curve);
+                }
+            }
+
+            // 3. Draw User Custom Drawings (Passlijnen, Gebogen Looplijnen, Zones)
+            const allDrawings = [...customDrawings];
+            if (currentDrawing) allDrawings.push(currentDrawing);
+            allDrawings.forEach(d => {
+                const c1 = logicalToCanvas(d.x1, d.y1);
+                const c2 = logicalToCanvas(d.x2, d.y2);
+                if (d.type === 'run') {
+                    drawCurvedArrow(c1.x, c1.y, c2.x, c2.y, '#38bdf8', true, 2.8, 0.18);
+                } else if (d.type === 'pass') {
+                    drawCurvedArrow(c1.x, c1.y, c2.x, c2.y, '#facc15', true, 3.0, 0.0);
+                } else if (d.type === 'zone') {
+                    const r = Math.max(16, Math.hypot(c2.x - c1.x, c2.y - c1.y));
+                    ctx.save();
+                    const zGrad = ctx.createRadialGradient(c1.x, c1.y, 4, c1.x, c1.y, r);
+                    zGrad.addColorStop(0, 'rgba(16, 185, 129, 0.30)');
+                    zGrad.addColorStop(1, 'rgba(16, 185, 129, 0.06)');
+                    ctx.beginPath();
+                    ctx.arc(c1.x, c1.y, r, 0, Math.PI * 2);
+                    ctx.fillStyle = zGrad;
+                    ctx.fill();
+                    ctx.setLineDash([6, 4]);
+                    ctx.lineDashOffset = -visualTick * 15;
+                    ctx.strokeStyle = '#34d399';
+                    ctx.lineWidth = 2.0;
+                    ctx.stroke();
+                    ctx.restore();
+                }
+            });
+
+            // 4. Draw Broadcast Player Pucks (3D layered with Directional Vision Arc)
+            const puckRadius = getPlayerTokenRadius();
+            const ballCanvas = logicalToCanvas(state.ball.x, state.ball.y);
+
+            if (showOpponents) {
+                state.away.forEach((pt, i) => {
+                    const c = logicalToCanvas(pt.x, pt.y);
+                    const nextPt = nextPhaseObj?.away?.[i] ? logicalToCanvas(nextPhaseObj.away[i].x, nextPhaseObj.away[i].y) : null;
+                    const angle = getPlayerFacingAngle(c, nextPt, ballCanvas);
+                    const info = activeData.awayPlayers[i] || { role: `${i + 1}`, name: '' };
+                    const isSelected = (selectedPlayer && selectedPlayer.team === 'away' && selectedPlayer.index === i) ||
+                                       (hoveredEntity && hoveredEntity.type === 'away' && hoveredEntity.index === i);
+                    drawBroadcastPuck(c.x, c.y, puckRadius, 'away', info.role, info.name, angle, isSelected);
+                });
+            }
+
+            state.neutral.forEach((pt, i) => {
+                const c = logicalToCanvas(pt.x, pt.y);
+                const nextPt = nextPhaseObj?.neutral?.[i] ? logicalToCanvas(nextPhaseObj.neutral[i].x, nextPhaseObj.neutral[i].y) : null;
+                const angle = getPlayerFacingAngle(c, nextPt, ballCanvas);
+                const info = activeData.neutralPlayers[i] || { role: `N${i + 1}`, name: 'Neutraal' };
+                const isSelected = (selectedPlayer && selectedPlayer.team === 'neutral' && selectedPlayer.index === i) ||
+                                   (hoveredEntity && hoveredEntity.type === 'neutral' && hoveredEntity.index === i);
+                drawBroadcastPuck(c.x, c.y, puckRadius, 'neutral', info.role, info.name, angle, isSelected);
+            });
+
+            state.home.forEach((pt, i) => {
+                const c = logicalToCanvas(pt.x, pt.y);
+                const nextPt = nextPhaseObj?.home?.[i] ? logicalToCanvas(nextPhaseObj.home[i].x, nextPhaseObj.home[i].y) : null;
+                const angle = getPlayerFacingAngle(c, nextPt, ballCanvas);
+                const info = activeData.homePlayers[i] || { role: `${i + 1}`, name: '' };
+                const palette = info.role === 'K' ? 'keeper' : 'home';
+                const isSelected = (selectedPlayer && selectedPlayer.team === 'home' && selectedPlayer.index === i) ||
+                                   (hoveredEntity && hoveredEntity.type === 'home' && hoveredEntity.index === i);
+                drawBroadcastPuck(c.x, c.y, puckRadius, palette, info.role, info.name, angle, isSelected);
+            });
+
+            // 5. Draw Realistic Rotating 3D Football with Lofted Shadow Separation
+            drawBroadcastFootball(ballCanvas.x, ballCanvas.y, Math.max(8.5, puckRadius * 0.60), state.ballElevation, state.ballTravelDist);
+        }
+
+        function getPlayerFacingAngle(currCanvas, nextCanvas, ballCanvas) {
+            if (nextCanvas) {
+                const d = Math.hypot(nextCanvas.x - currCanvas.x, nextCanvas.y - currCanvas.y);
+                if (d > 14) {
+                    return Math.atan2(nextCanvas.y - currCanvas.y, nextCanvas.x - currCanvas.x);
+                }
+            }
+            return Math.atan2(ballCanvas.y - currCanvas.y, ballCanvas.x - currCanvas.x);
+        }
+
+        function getPlayerTokenRadius() {
+            const minDim = Math.min(pitchRect.width, pitchRect.height);
+            if (currentFormat === '11v11') return Math.max(12.5, Math.min(17.5, minDim * 0.034));
+            if (currentFormat === '8v8') return Math.max(13.5, Math.min(19.5, minDim * 0.039));
+            return Math.max(14.5, Math.min(21.5, minDim * 0.044));
+        }
+
+        /**
+         * Draws a smooth Quadratic Bézier Arrow with animated marching dashes
+         */
+        function drawCurvedArrow(x1, y1, x2, y2, color, dashed, width, curvature = 0.15) {
+            const dx = x2 - x1;
+            const dy = y2 - y1;
+            const len = Math.hypot(dx, dy);
+            if (len < 12) return;
+
+            // Shorten endpoint slightly so arrowhead sits cleanly outside target puck
+            const shrinkRatio = Math.max(0.1, (len - 16) / len);
+            const tx = x1 + dx * shrinkRatio;
+            const ty = y1 + dy * shrinkRatio;
+
+            // Control point perpendicular to line
+            const mx = (x1 + tx) * 0.5 - dy * curvature;
+            const my = (y1 + ty) * 0.5 + dx * curvature;
+
+            ctx.save();
+            ctx.strokeStyle = color;
+            ctx.fillStyle = color;
+            ctx.lineWidth = width;
+            ctx.lineCap = 'round';
+            ctx.shadowColor = color;
+            ctx.shadowBlur = 6;
+
+            if (dashed) {
+                ctx.setLineDash([7, 6]);
+                ctx.lineDashOffset = -visualTick * 24;
+            }
+
+            ctx.beginPath();
+            ctx.moveTo(x1, y1);
+            ctx.quadraticCurveTo(mx, my, tx, ty);
+            ctx.stroke();
+
+            // Tangent angle at end of quadratic curve
+            const endAngle = Math.atan2(ty - my, tx - mx);
+            ctx.setLineDash([]);
+            const headLen = 9.5;
+            ctx.beginPath();
+            ctx.moveTo(tx + Math.cos(endAngle) * 3, ty + Math.sin(endAngle) * 3);
+            ctx.lineTo(tx - headLen * Math.cos(endAngle - Math.PI / 6), ty - headLen * Math.sin(endAngle - Math.PI / 6));
+            ctx.lineTo(tx - headLen * Math.cos(endAngle + Math.PI / 6), ty - headLen * Math.sin(endAngle + Math.PI / 6));
+            ctx.closePath();
+            ctx.fill();
+            ctx.restore();
+        }
+
+        /**
+         * Draws a High-End 3D Broadcast Player Puck with directional chevron & turf highlight
+         */
+        function drawBroadcastPuck(x, y, r, paletteType, roleText, nameText, facingAngle, isHighlighted) {
+            ctx.save();
+
+            const palettes = {
+                home: { top: '#f6d36a', mid: '#e3b53a', bot: '#7d620f', glow: '#f6d36a', text: '#14140f' },
+                away: { top: '#60a5fa', mid: '#2563eb', bot: '#1e3a8a', glow: '#93c5fd', text: '#ffffff' },
+                keeper: { top: '#f4f2ea', mid: '#d6d2c4', bot: '#6f6b5f', glow: '#ffffff', text: '#14140f' },
+                neutral: { top: '#fef08a', mid: '#eab308', bot: '#a16207', glow: '#fde047', text: '#0f172a' }
+            };
+            const pal = palettes[paletteType] || palettes.home;
+
+            // 1. Pulsing Broadcast Ring on the grass when selected or hovered
+            if (isHighlighted) {
+                const pulse = 0.5 + 0.5 * Math.sin(visualTick * 5);
+                ctx.save();
+                ctx.beginPath();
+                ctx.arc(x, y + 1, r + 5 + pulse * 3, 0, Math.PI * 2);
+                ctx.strokeStyle = pal.glow;
+                ctx.lineWidth = 2.2;
+                ctx.shadowColor = pal.glow;
+                ctx.shadowBlur = 10;
+                ctx.stroke();
+                ctx.restore();
+            }
+
+            // 2. Subtle Directional Vision Arc / Chevron on the grass in front of the player
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.rotate(facingAngle);
+            ctx.beginPath();
+            ctx.arc(0, 0, r + 3.5, -0.52, 0.52);
+            ctx.strokeStyle = pal.glow;
+            ctx.lineWidth = 2.4;
+            ctx.lineCap = 'round';
+            ctx.stroke();
+
+            // Small chevron tip
+            ctx.fillStyle = pal.glow;
+            ctx.beginPath();
+            ctx.moveTo(r + 7.2, 0);
+            ctx.lineTo(r + 3.2, -3.2);
+            ctx.lineTo(r + 3.2, 3.2);
+            ctx.closePath();
+            ctx.fill();
+            ctx.restore();
+
+            // 3. Soft Elliptical Ground Shadow
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.52)';
+            ctx.beginPath();
+            ctx.ellipse(x, y + r * 0.28, r * 1.02, r * 0.86, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // 4. 3D Puck Lower Cylinder Base Rim
+            ctx.fillStyle = pal.bot;
+            ctx.beginPath();
+            ctx.arc(x, y + 2.2, r, 0, Math.PI * 2);
+            ctx.fill();
+
+            // 5. Main Glossy Puck Body Gradient
+            const grad = ctx.createRadialGradient(x - r * 0.35, y - r * 0.35, r * 0.1, x, y, r);
+            grad.addColorStop(0, pal.top);
+            grad.addColorStop(0.55, pal.mid);
+            grad.addColorStop(1, pal.bot);
+
+            ctx.fillStyle = grad;
+            ctx.beginPath();
+            ctx.arc(x, y, r, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Crisp Metallic/White Rim
+            ctx.lineWidth = 1.8;
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.92)';
+            ctx.stroke();
+
+            // Top Specular Sheen
+            ctx.beginPath();
+            ctx.arc(x, y, r * 0.82, -Math.PI * 0.85, -Math.PI * 0.15);
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.35)';
+            ctx.lineWidth = 1.2;
+            ctx.stroke();
+
+            // 6. Crisp Role / Number Text
+            ctx.fillStyle = pal.text;
+            ctx.font = `800 ${Math.round(r * 0.70)}px Inter, sans-serif`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(roleText, x, y + 0.5);
+
+            // 7. Floating Glass Name Pill Underneath
+            if (showPlayerNames && nameText) {
+                const fontSize = Math.max(8.5, Math.round(r * 0.54));
+                ctx.font = `600 ${fontSize}px Inter, sans-serif`;
+                const textW = ctx.measureText(nameText).width;
+                const boxW = textW + 10;
+                const boxH = fontSize + 5;
+                const boxX = x - boxW / 2;
+                const boxY = y + r + 4.5;
+
+                ctx.fillStyle = 'rgba(9, 13, 22, 0.78)';
+                ctx.beginPath();
+                ctx.roundRect(boxX, boxY, boxW, boxH, 5);
+                ctx.fill();
+
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.12)';
+                ctx.lineWidth = 0.8;
+                ctx.stroke();
+
+                ctx.fillStyle = '#f1f5f9';
+                ctx.fillText(nameText, x, boxY + boxH / 2 + 0.5);
+            }
+
+            ctx.restore();
+        }
+
+        /**
+         * Draws a realistic rotating football with 3D height elevation & separated ground shadow
+         */
+        function drawBroadcastFootball(x, y, baseR, elevation = 0, travelDist = 0) {
+            ctx.save();
+
+            const liftPx = elevation * 34;
+            const r = baseR * (1 + elevation * 0.28);
+            const ballY = y - liftPx;
+
+            // 1. Ground Shadow on the grass (separates and softens when ball is in the air!)
+            const shadowScale = Math.max(0.55, 1 - elevation * 0.35);
+            const shadowAlpha = Math.max(0.22, 0.62 - elevation * 0.32);
+            ctx.fillStyle = `rgba(0, 0, 0, ${shadowAlpha})`;
+            ctx.beginPath();
+            ctx.ellipse(x + elevation * 6, y + 3, baseR * shadowScale * 1.05, baseR * shadowScale * 0.75, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // 2. 3D Spherical Ball Body
+            const sphereGrad = ctx.createRadialGradient(x - r * 0.3, ballY - r * 0.3, r * 0.1, x, ballY, r);
+            sphereGrad.addColorStop(0, '#ffffff');
+            sphereGrad.addColorStop(0.7, '#f1f5f9');
+            sphereGrad.addColorStop(1, '#94a3b8');
+
+            ctx.beginPath();
+            ctx.arc(x, ballY, r, 0, Math.PI * 2);
+            ctx.fillStyle = sphereGrad;
+            ctx.fill();
+            ctx.lineWidth = 1.4;
+            ctx.strokeStyle = '#0f172a';
+            ctx.stroke();
+
+            // 3. Rotating Pentagon/Hexagon Seam Pattern
+            ctx.save();
+            ctx.beginPath();
+            ctx.arc(x, ballY, r - 0.8, 0, Math.PI * 2);
+            ctx.clip();
+
+            const spinAngle = travelDist * 18 + (isPlaying ? visualTick * 2.2 : 0);
+            ctx.translate(x, ballY);
+            ctx.rotate(spinAngle);
+
+            // Center dark panel
+            ctx.fillStyle = '#0f172a';
+            ctx.beginPath();
+            for (let i = 0; i < 5; i++) {
+                const a = (i * Math.PI * 2) / 5;
+                const px = Math.cos(a) * r * 0.38;
+                const py = Math.sin(a) * r * 0.38;
+                if (i === 0) ctx.moveTo(px, py);
+                else ctx.lineTo(px, py);
+            }
+            ctx.closePath();
+            ctx.fill();
+
+            // Seam spokes & outer pentagon patches
+            ctx.strokeStyle = '#1e293b';
+            ctx.lineWidth = 1.2;
+            for (let i = 0; i < 5; i++) {
+                const a = (i * Math.PI * 2) / 5;
+                ctx.beginPath();
+                ctx.moveTo(Math.cos(a) * r * 0.34, Math.sin(a) * r * 0.34);
+                ctx.lineTo(Math.cos(a) * r * 0.88, Math.sin(a) * r * 0.88);
+                ctx.stroke();
+
+                ctx.fillStyle = '#0f172a';
+                ctx.beginPath();
+                ctx.arc(Math.cos(a) * r * 0.95, Math.sin(a) * r * 0.95, r * 0.24, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            ctx.restore();
+
+            // Subtle golden broadcast tracking halo around ball
+            ctx.beginPath();
+            ctx.arc(x, ballY, r + 2.2, 0, Math.PI * 2);
+            ctx.strokeStyle = 'rgba(250, 204, 21, 0.65)';
+            ctx.lineWidth = 1.3;
+            ctx.stroke();
+
+            ctx.restore();
+        }
+
+        /**************************************************************************
+         * 6. 60 FPS ANIMATION LOOP & TIMELINE CONTROLS
+         **************************************************************************/
+        function animationLoop(now) {
+            const dt = Math.min(0.05, (now - lastFrameTime) / 1000);
+            lastFrameTime = now;
+            visualTick += dt;
+
+            if (isPlaying && activeData) {
+                const phases = activeData.phases;
+                if (pauseHoldTimer > 0) {
+                    pauseHoldTimer -= dt * playbackSpeed;
+                } else {
+                    phaseProgress += (dt * playbackSpeed) / 1.95;
+
+                    if (phaseProgress >= 1.0) {
+                        phaseProgress = 0;
+                        if (currentPhaseIndex < phases.length - 1) {
+                            currentPhaseIndex++;
+                            pauseHoldTimer = 0.40;
+                            updatePhaseUI();
+                        } else if (loopEnabled) {
+                            currentPhaseIndex = 0;
+                            pauseHoldTimer = 0.50;
+                            updatePhaseUI();
+                        } else {
+                            currentPhaseIndex = phases.length - 1;
+                            isPlaying = false;
+                            updatePlayButtonUI();
+                            updatePhaseUI();
+                        }
+                    }
+                }
+                updateScrubberUI();
+            }
+
+            drawScene();
+            requestAnimationFrame(animationLoop);
+        }
+
+        function togglePlay() {
+            isPlaying = !isPlaying;
+            if (isPlaying) {
+                const phases = activeData.phases;
+                if (currentPhaseIndex >= phases.length - 1 && !loopEnabled) {
+                    currentPhaseIndex = 0;
+                    phaseProgress = 0;
+                }
+                lastFrameTime = performance.now();
+            }
+            updatePlayButtonUI();
+            updatePhaseUI();
+        }
+
+        function updatePlayButtonUI() {
+            const icon = document.getElementById('iconPlayPause');
+            const focusIcon = document.getElementById('focusPlayIcon');
+            const text = document.getElementById('textPlayPause');
+            if (isPlaying) {
+                icon.className = 'fa-solid fa-pause text-xs';
+                focusIcon.className = 'fa-solid fa-pause text-orange-400';
+                text.textContent = 'Pauze';
+            } else {
+                icon.className = 'fa-solid fa-play text-xs';
+                focusIcon.className = 'fa-solid fa-play text-orange-400';
+                text.textContent = 'Afspelen';
+            }
+        }
+
+        function goToPhase(idx) {
+            if (!activeData) return;
+            isPlaying = false;
+            updatePlayButtonUI();
+            currentPhaseIndex = Math.max(0, Math.min(activeData.phases.length - 1, idx));
+            phaseProgress = 0;
+            updatePhaseUI();
+            updateScrubberUI();
+        }
+
+        function prevPhase() {
+            if (!activeData) return;
+            goToPhase((currentPhaseIndex - 1 + activeData.phases.length) % activeData.phases.length);
+        }
+
+        function nextPhase() {
+            if (!activeData) return;
+            goToPhase((currentPhaseIndex + 1) % activeData.phases.length);
+        }
+
+        function setSpeed(spd) {
+            playbackSpeed = spd;
+            document.querySelectorAll('.speed-btn').forEach(btn => {
+                if (parseFloat(btn.dataset.speed) === spd) {
+                    btn.className = 'speed-btn px-2 py-1 rounded-lg bg-white/15 text-white font-bold transition';
+                } else {
+                    btn.className = 'speed-btn px-2 py-1 rounded-lg text-slate-400 hover:text-white transition';
+                }
+            });
+        }
+
+        function toggleLoop() {
+            loopEnabled = !loopEnabled;
+            const btn = document.getElementById('btnLoop');
+            btn.className = loopEnabled
+                ? 'w-8 h-8 rounded-xl bg-orange-500/20 text-orange-400 border border-orange-500/40 text-xs flex items-center justify-center shrink-0 transition'
+                : 'w-8 h-8 rounded-xl bg-slate-900/70 text-slate-500 border border-white/10 text-xs flex items-center justify-center shrink-0 transition';
+        }
+
+        function scrubTimeline(e) {
+            if (!activeData) return;
+            const track = document.getElementById('timelineTrack');
+            const rect = track.getBoundingClientRect();
+            const ratio = Math.max(0, Math.min(0.999, (e.clientX - rect.left) / rect.width));
+            const total = activeData.phases.length;
+            const exact = ratio * total;
+            currentPhaseIndex = Math.floor(exact);
+            phaseProgress = exact - currentPhaseIndex;
+            isPlaying = false;
+            updatePlayButtonUI();
+            updatePhaseUI();
+            updateScrubberUI();
+        }
+
+        function updateScrubberUI() {
+            if (!activeData) return;
+            const total = activeData.phases.length;
+            const pct = ((currentPhaseIndex + phaseProgress) / total) * 100;
+            document.getElementById('timelineFill').style.width = `${Math.min(100, Math.max(6, pct))}%`;
+            document.getElementById('focusPhaseLabel').textContent = `Fase ${currentPhaseIndex + 1}/${total}`;
+        }
+
+        function updatePhaseUI() {
+            if (!activeData) return;
+            const phases = activeData.phases;
+            const curr = phases[currentPhaseIndex];
+
+            const container = document.getElementById('phasePillsContainer');
+            container.innerHTML = '';
+            phases.forEach((p, idx) => {
+                const btn = document.createElement('button');
+                const active = idx === currentPhaseIndex;
+                btn.className = active
+                    ? 'flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg text-[11px] font-bold bg-orange-500/25 text-orange-300 border border-orange-500/50 transition'
+                    : 'flex items-center gap-1.5 px-2 py-0.5 rounded-lg text-[11px] font-medium text-slate-400 hover:text-white transition';
+                btn.innerHTML = `<span class="w-2 h-2 rounded-full ${active ? 'bg-orange-400 shadow-[0_0_8px_#fb923c]' : 'bg-slate-600'}"></span><span>Fase ${idx + 1}</span>`;
+                btn.onclick = () => goToPhase(idx);
+                container.appendChild(btn);
+            });
+
+            document.getElementById('coachStepBadge').textContent = `FASE ${currentPhaseIndex + 1} / ${phases.length}`;
+            document.getElementById('coachStepTitle').textContent = curr.title;
+            document.getElementById('coachStepDesc').textContent = curr.desc;
+            document.getElementById('coachStepTip').textContent = curr.tip;
+            document.getElementById('focusPhaseLabel').textContent = `Fase ${currentPhaseIndex + 1}/${phases.length}`;
+
+            const delBtn = document.getElementById('btnDeletePhase');
+            delBtn.disabled = phases.length <= 1;
+            delBtn.style.opacity = phases.length <= 1 ? '0.35' : '1';
+        }
+
+        /**************************************************************************
+         * 7. POINTER INTERACTION (DRAGGING, HOVERING & CURVED DRAWING)
+         **************************************************************************/
+        function getPointerPos(e) {
+            const rect = canvas.getBoundingClientRect();
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            return { x: clientX - rect.left, y: clientY - rect.top };
+        }
+
+        function findEntityAtCanvasPos(cx, cy) {
+            if (!activeData) return null;
+            const state = getInterpolatedState();
+            const r = getPlayerTokenRadius() + 6;
+
+            const bPos = logicalToCanvas(state.ball.x, state.ball.y);
+            if (Math.hypot(cx - bPos.x, cy - bPos.y) <= r * 0.9) {
+                return { type: 'ball', index: 0 };
+            }
+
+            for (let i = state.home.length - 1; i >= 0; i--) {
+                const p = logicalToCanvas(state.home[i].x, state.home[i].y);
+                if (Math.hypot(cx - p.x, cy - p.y) <= r) return { type: 'home', index: i };
+            }
+
+            for (let i = state.neutral.length - 1; i >= 0; i--) {
+                const p = logicalToCanvas(state.neutral[i].x, state.neutral[i].y);
+                if (Math.hypot(cx - p.x, cy - p.y) <= r) return { type: 'neutral', index: i };
+            }
+
+            if (showOpponents) {
+                for (let i = state.away.length - 1; i >= 0; i--) {
+                    const p = logicalToCanvas(state.away[i].x, state.away[i].y);
+                    if (Math.hypot(cx - p.x, cy - p.y) <= r) return { type: 'away', index: i };
+                }
+            }
+            return null;
+        }
+
+        canvas.addEventListener('pointerdown', (e) => {
+            const pos = getPointerPos(e);
+
+            if (activeTool !== 'move') {
+                isDrawing = true;
+                const lPos = canvasToLogical(pos.x, pos.y);
+                currentDrawing = { type: activeTool, x1: lPos.x, y1: lPos.y, x2: lPos.x, y2: lPos.y };
+                return;
+            }
+
+            const hit = findEntityAtCanvasPos(pos.x, pos.y);
+            if (hit) {
+                if (isPlaying) {
+                    isPlaying = false;
+                    updatePlayButtonUI();
+                }
+                if (phaseProgress > 0.01) {
+                    const snap = getInterpolatedState();
+                    const curr = activeData.phases[currentPhaseIndex];
+                    curr.ball = { ...snap.ball, arc: curr.ball.arc || 0 };
+                    curr.home = snap.home;
+                    curr.away = snap.away;
+                    curr.neutral = snap.neutral;
+                    phaseProgress = 0;
+                    updateScrubberUI();
+                }
+
+                draggingEntity = hit;
+                if (hit.type !== 'ball') {
+                    const now = performance.now();
+                    selectPlayerForEditing(hit.type, hit.index, now - lastClickTime < 350);
+                    lastClickTime = now;
+                }
+                canvas.setPointerCapture(e.pointerId);
+            } else {
+                closePlayerPopover();
+            }
+        });
+
+        canvas.addEventListener('pointermove', (e) => {
+            const pos = getPointerPos(e);
+
+            if (isDrawing && currentDrawing) {
+                const lPos = canvasToLogical(pos.x, pos.y);
+                currentDrawing.x2 = lPos.x;
+                currentDrawing.y2 = lPos.y;
+                return;
+            }
+
+            if (draggingEntity && activeData) {
+                const lPos = canvasToLogical(pos.x, pos.y);
+                const currPhase = activeData.phases[currentPhaseIndex];
+                if (draggingEntity.type === 'ball') {
+                    currPhase.ball.x = lPos.x;
+                    currPhase.ball.y = lPos.y;
+                } else if (draggingEntity.type === 'home') {
+                    currPhase.home[draggingEntity.index] = { x: lPos.x, y: lPos.y };
+                } else if (draggingEntity.type === 'away') {
+                    currPhase.away[draggingEntity.index] = { x: lPos.x, y: lPos.y };
+                } else if (draggingEntity.type === 'neutral') {
+                    currPhase.neutral[draggingEntity.index] = { x: lPos.x, y: lPos.y };
+                }
+                return;
+            }
+
+            hoveredEntity = activeTool === 'move' ? findEntityAtCanvasPos(pos.x, pos.y) : null;
+        });
+
+        window.addEventListener('pointerup', () => {
+            if (isDrawing && currentDrawing) {
+                const dist = Math.hypot(currentDrawing.x2 - currentDrawing.x1, currentDrawing.y2 - currentDrawing.y1);
+                if (dist > 0.02) customDrawings.push(currentDrawing);
+                currentDrawing = null;
+                isDrawing = false;
+            }
+            draggingEntity = null;
+        });
+
+        function selectPlayerForEditing(team, index, showPopover = false) {
+            selectedPlayer = { team, index };
+            const list = team === 'home'
+                ? activeData.homePlayers
+                : (team === 'away' ? activeData.awayPlayers : activeData.neutralPlayers);
+            const playerObj = list[index];
+            if (!playerObj) return;
+
+            document.getElementById('selPlayerTeamBadge').textContent = team === 'home'
+                ? `Oranje • Speler #${index + 1}`
+                : (team === 'away' ? `Blauw • Speler #${index + 1}` : `Neutraal #${index + 1}`);
+
+            document.getElementById('inputPlayerRole').value = playerObj.role;
+            document.getElementById('inputPlayerName').value = playerObj.name;
+
+            if (showPopover) {
+                document.getElementById('playerPopover').classList.remove('hidden');
+            }
+        }
+
+        function closePlayerPopover() {
+            document.getElementById('playerPopover').classList.add('hidden');
+        }
+
+        function savePlayerEdit() {
+            if (!selectedPlayer || !activeData) return;
+            const list = selectedPlayer.team === 'home'
+                ? activeData.homePlayers
+                : (selectedPlayer.team === 'away' ? activeData.awayPlayers : activeData.neutralPlayers);
+            const playerObj = list[selectedPlayer.index];
+            if (!playerObj) return;
+
+            playerObj.role = document.getElementById('inputPlayerRole').value.toUpperCase() || 'S';
+            playerObj.name = document.getElementById('inputPlayerName').value;
+        }
+
+        /**************************************************************************
+         * 8. UI CONTROLS: FORMATS, SCENARIOS, ICON TOGGLES & FOCUS MODE
+         **************************************************************************/
+        function selectFormat(fmt) {
+            currentFormat = fmt;
+            currentSubFormation = 0;
+
+            document.querySelectorAll('.format-tab').forEach(btn => {
+                if (btn.dataset.format === fmt) btn.classList.add('format-pill-active');
+                else btn.classList.remove('format-pill-active');
+            });
+
+            const badgeLabels = {
+                '4v4': '4v4 • JO7 Mini-veld',
+                '6v6': '6v6 • JO8-JO10',
+                '8v8': '8v8 • JO11-JO12',
+                '11v11': '11v11 • Heel Veld',
+                'training': 'Rondo & Positiespel'
+            };
+            document.getElementById('activeFormatBadge').textContent = badgeLabels[fmt] || fmt;
+
+            updateSubFormationSelector();
+            loadScenarioData();
+            resizeCanvas();
+        }
+
+        function selectScenario(scen) {
+            currentScenario = scen;
+            document.querySelectorAll('.scenario-btn').forEach(btn => {
+                if (btn.dataset.scenario === scen) btn.classList.add('scenario-pill-active');
+                else btn.classList.remove('scenario-pill-active');
+            });
+
+            updateSubFormationSelector();
+            loadScenarioData();
+        }
+
+        function updateSubFormationSelector() {
+            const select = document.getElementById('formationSelect');
+            const options = SUB_FORMATIONS[currentFormat] || [];
+            select.innerHTML = '';
+            options.forEach((opt, idx) => {
+                const el = document.createElement('option');
+                el.value = idx;
+                el.textContent = opt.name;
+                if (idx === currentSubFormation) el.selected = true;
+                select.appendChild(el);
+            });
+        }
+
+        function changeSubFormation(idxStr) {
+            currentSubFormation = parseInt(idxStr, 10) || 0;
+            loadScenarioData();
+        }
+
+        function loadScenarioData() {
+            isPlaying = false;
+            updatePlayButtonUI();
+            currentPhaseIndex = 0;
+            phaseProgress = 0;
+            customDrawings = [];
+            activeData = buildScenarioData(currentFormat, currentScenario, currentSubFormation);
+            selectedPlayer = { team: 'home', index: 0 };
+            updatePhaseUI();
+            updateScrubberUI();
+        }
+
+        function resetCurrentScenario() {
+            loadScenarioData();
+        }
+
+        function addCustomPhase() {
+            if (!activeData) return;
+            const curr = activeData.phases[currentPhaseIndex];
+            const clonePhase = {
+                title: `Fase ${activeData.phases.length + 1}: Vervolgactie`,
+                desc: 'Versleep de spelers en de bal naar hun nieuwe positie en klik op Afspelen.',
+                tip: '"Pas deze tekst aan met het potlood-icoontje."',
+                ball: { x: curr.ball.x, y: curr.ball.y, arc: 0 },
+                home: curr.home.map(p => ({ x: p.x, y: p.y })),
+                away: curr.away.map(p => ({ x: p.x, y: p.y })),
+                neutral: (curr.neutral || []).map(p => ({ x: p.x, y: p.y })),
+                triangles: curr.triangles ? [...curr.triangles] : []
+            };
+            activeData.phases.splice(currentPhaseIndex + 1, 0, clonePhase);
+            goToPhase(currentPhaseIndex + 1);
+        }
+
+        function deleteCurrentPhase() {
+            if (!activeData || activeData.phases.length <= 1) return;
+            activeData.phases.splice(currentPhaseIndex, 1);
+            if (currentPhaseIndex >= activeData.phases.length) {
+                currentPhaseIndex = activeData.phases.length - 1;
+            }
+            goToPhase(currentPhaseIndex);
+        }
+
+        function setInteractionTool(tool) {
+            activeTool = tool;
+            document.querySelectorAll('.tool-btn').forEach(btn => btn.classList.remove('tool-pill-active'));
+            const map = { move: 'toolMove', pass: 'toolPass', run: 'toolRun', zone: 'toolZone' };
+            const el = document.getElementById(map[tool]);
+            if (el) el.classList.add('tool-pill-active');
+            canvas.style.cursor = tool === 'move' ? 'grab' : 'crosshair';
+        }
+
+        function clearDrawings() {
+            customDrawings = [];
+            currentDrawing = null;
+        }
+
+        function toggleVisualOption(opt) {
+            if (opt === 'paths') {
+                showPaths = !showPaths;
+                document.getElementById('btnTogglePaths').classList.toggle('icon-toggle-active', showPaths);
+            } else if (opt === 'triangles') {
+                showTriangles = !showTriangles;
+                document.getElementById('btnToggleTriangles').classList.toggle('icon-toggle-active', showTriangles);
+            } else if (opt === 'names') {
+                showPlayerNames = !showPlayerNames;
+                document.getElementById('btnToggleNames').classList.toggle('icon-toggle-active', showPlayerNames);
+            } else if (opt === 'opponents') {
+                showOpponents = !showOpponents;
+                document.getElementById('btnToggleOpponents').classList.toggle('icon-toggle-active', showOpponents);
+            }
+        }
+
+        function toggleOrientation() {
+            isVertical = !isVertical;
+            resizeCanvas();
+        }
+
+        function toggleFocusMode() {
+            isFocusMode = !isFocusMode;
+            document.body.classList.toggle('focus-mode', isFocusMode);
+            const exitBar = document.getElementById('focusExitBar');
+            if (isFocusMode) {
+                exitBar.classList.remove('hidden');
+                exitBar.classList.add('flex');
+            } else {
+                exitBar.classList.add('hidden');
+                exitBar.classList.remove('flex');
+            }
+            setTimeout(resizeCanvas, 60);
+        }
+
+        function toggleCoachCardCollapse() {
+            isCoachCardCollapsed = !isCoachCardCollapsed;
+            const body = document.getElementById('coachCardBody');
+            const icon = document.getElementById('coachCollapseIcon');
+            if (isCoachCardCollapsed) {
+                body.classList.add('hidden');
+                icon.className = 'fa-solid fa-chevron-up text-xs';
+            } else {
+                body.classList.remove('hidden');
+                icon.className = 'fa-solid fa-chevron-down text-xs';
+            }
+        }
+
+        function openEditPhaseTextModal() {
+            if (!activeData) return;
+            const curr = activeData.phases[currentPhaseIndex];
+            document.getElementById('modalPhaseTitle').value = curr.title;
+            document.getElementById('modalPhaseDesc').value = curr.desc;
+            document.getElementById('modalPhaseTip').value = curr.tip;
+            const modal = document.getElementById('editPhaseModal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function closeEditPhaseTextModal() {
+            const modal = document.getElementById('editPhaseModal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        function saveEditPhaseTextModal() {
+            if (!activeData) return;
+            const curr = activeData.phases[currentPhaseIndex];
+            curr.title = document.getElementById('modalPhaseTitle').value || `Fase ${currentPhaseIndex + 1}`;
+            curr.desc = document.getElementById('modalPhaseDesc').value || '';
+            curr.tip = document.getElementById('modalPhaseTip').value || '';
+            closeEditPhaseTextModal();
+            updatePhaseUI();
+        }
+
+        /**************************************************************************
+         * 9. INITIALIZATION
+         **************************************************************************/
+        window.addEventListener('resize', resizeCanvas);
+
+        window.onload = function () {
+            createGrassNoisePattern();
+            updateSubFormationSelector();
+            loadScenarioData();
+            resizeCanvas();
+            requestAnimationFrame(animationLoop);
+        };
+    </script>
+<!-- VFC Teamplanner: teammodus v2 (eigen spelvorm, bedieningspaneel, groter scherm binnen de app) -->
+<style>
+.vfc-panel{position:fixed;top:12px;bottom:12px;z-index:40;width:236px;border-radius:18px;padding:14px 12px;display:flex;flex-direction:column;gap:14px;overflow-y:auto;color:#e2e8f0}
+.vfc-panel::-webkit-scrollbar{width:0}
+#vfcLeft{left:12px}#vfcRight{right:12px}
+.vfc-sec{display:flex;flex-direction:column;gap:7px}
+.vfc-h{display:flex;align-items:center;justify-content:space-between;font:800 10px/1 Inter,system-ui,sans-serif;letter-spacing:.09em;text-transform:uppercase;color:#94a3b8}
+.vfc-i{width:18px;height:18px;border-radius:50%;border:1px solid rgba(255,255,255,.18);background:none;color:#94a3b8;font:700 10px/1 Georgia,serif;font-style:italic;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0}
+.vfc-i:hover,.vfc-i.on{color:#fb923c;border-color:rgba(249,115,22,.6)}
+.vfc-tip{display:none;font:400 11.5px/1.45 Inter,system-ui,sans-serif;color:#cbd5e1;background:rgba(2,6,23,.55);border:1px solid rgba(255,255,255,.07);border-radius:10px;padding:8px 9px}
+.vfc-tip.on{display:block}
+.vfc-team{display:flex;align-items:center;gap:10px;padding-bottom:12px;border-bottom:1px solid rgba(255,255,255,.08)}
+.vfc-crest{width:34px;height:34px;border-radius:11px;background:#d9b44a;color:#14140f;display:flex;align-items:center;justify-content:center;font:800 12px/1 Inter,sans-serif;flex:none;box-shadow:0 4px 14px -3px rgba(217,180,74,.5)}
+.vfc-team b{display:block;font:800 14px/1.1 Inter,sans-serif;color:#fff}
+.vfc-team small{font:600 11px/1.3 Inter,sans-serif;color:#94a3b8}
+.vfc-seg{display:flex;background:rgba(2,6,23,.6);border:1px solid rgba(255,255,255,.06);border-radius:11px;padding:3px;gap:2px}
+.vfc-seg button{flex:1;border:0;background:none;color:#94a3b8;font:600 11.5px/1 Inter,sans-serif;padding:7px 4px;border-radius:8px;cursor:pointer}
+.vfc-seg button.on{background:rgba(255,255,255,.13);color:#fff}
+.vfc-btn{display:flex;align-items:center;gap:9px;width:100%;border:1px solid rgba(255,255,255,.08);background:rgba(2,6,23,.45);color:#e2e8f0;font:600 12px/1 Inter,sans-serif;padding:9px 11px;border-radius:11px;cursor:pointer;text-align:left}
+.vfc-btn:hover{background:rgba(255,255,255,.08)}
+.vfc-btn i{width:14px;text-align:center;color:#94a3b8}
+.vfc-btn.gold{background:linear-gradient(135deg,#e7c45e,#c99a2e);color:#14140f;border-color:transparent}.vfc-btn.gold i{color:#14140f}
+/* verplaatste onderdelen van het bord netjes in de kolom */
+.vfc-panel #formatTabs{display:flex;flex-wrap:wrap;gap:4px;overflow:visible}
+.vfc-panel #formatTabs button{flex:1 1 auto;justify-content:center}
+.vfc-panel #scenarioButtons{display:flex;flex-direction:column;gap:4px;overflow:visible;background:none;border:0;padding:0}
+.vfc-panel #scenarioButtons button{width:100%;justify-content:flex-start;border:1px solid rgba(255,255,255,.06);background:rgba(2,6,23,.4)}
+.vfc-panel #scenarioButtons button span{display:inline!important}
+.vfc-panel #subFormationPanel{display:block!important;width:100%}
+.vfc-panel #formationSelect{width:100%}
+.vfc-panel .vfc-row{display:flex;flex-wrap:wrap;gap:5px}
+.vfc-panel .vfc-tools{display:flex;flex-direction:column;gap:3px;background:rgba(2,6,23,.55);border:1px solid rgba(255,255,255,.05);border-radius:12px;padding:4px}
+.vfc-panel .vfc-tools button{width:100%;justify-content:flex-start;padding:8px 10px}
+.vfc-panel .vfc-tools button span{display:inline!important}
+.vfc-panel .vfc-play{display:flex;align-items:center;gap:6px}
+.vfc-panel .vfc-play #btnPlayPause{flex:1;justify-content:center}
+.vfc-panel #phasePillsContainer{flex-wrap:wrap}
+.vfc-panel .speedwrap{display:flex!important}
+.vfc-panel .vfc-fases{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.vfc-panel .vfc-fases>div:first-child{flex:1 1 100%}
+.vfc-panel #phasePillsContainer{display:grid!important;grid-template-columns:1fr 1fr;gap:4px}
+.vfc-panel #phasePillsContainer>*{justify-content:flex-start}
+.vfc-panel .vfc-coach .glass-card{background:rgba(2,6,23,.45);box-shadow:none;border-color:rgba(255,255,255,.07)}
+/* lay-a: links instellingen, rechts tekenen en fases */
+body.lay-a main,body.lay-b main{padding-left:262px!important}
+body.lay-a main{padding-right:262px!important}
+body.lay-a header,body.lay-b header{display:none!important}
+body.lay-a footer{display:none!important}
+body.lay-b footer{padding-left:262px!important}
+body.lay-a #coachingCard,body.lay-b #coachingCard{left:262px!important}
+body.lay-a #playerPopover{right:262px!important}
+/* lay-c: alles bovenin, compact */
+.vfc-top{display:flex;align-items:center;gap:8px;padding-right:10px;margin-right:2px;border-right:1px solid rgba(51,65,85,.7);flex:none}
+.vfc-top .vfc-crest{width:30px;height:30px;border-radius:10px;font-size:11px}
+.vfc-top b{font:800 13px/1 Inter,sans-serif;color:#fff;white-space:nowrap}
+.vfc-top .vfc-seg button{padding:6px 8px;flex:none}
+/* rustige stand (ingebed in het dashboard) */
+#vfcMini{position:fixed;left:50%;transform:translateX(-50%);bottom:10px;z-index:60;display:none;align-items:center;gap:6px;padding:5px 6px 5px 8px;border-radius:16px}
+#vfcMini .vfc-seg{flex:none}#vfcMini .vfc-seg button{padding:6px 9px;flex:none;white-space:nowrap}
+#vfcMini .vfc-btn{width:auto;padding:8px 11px;white-space:nowrap}
+#vfcMini b{font:800 12px/1 Inter,sans-serif;color:#fff;white-space:nowrap;margin:0 2px}
+body.vfc-calm #vfcMini{display:flex}
+body.vfc-calm .vfc-panel,body.vfc-calm header,body.vfc-calm footer,body.vfc-calm #coachingCard{display:none!important}
+body.vfc-calm main{padding:8px 8px 58px!important}
+body.focus-mode .vfc-panel{opacity:0;pointer-events:none}
+@media (max-width:720px){#vfcMini .hide-sm{display:none}}
+</style>
+<script>
+(function(){
+  let T = null;
+  try{ const h = decodeURIComponent((location.hash || '').replace(/^#d=/, '')); if(h) T = JSON.parse(h); }catch(e){}
+  if(!T || !T.players) return;
+  const qs = new URLSearchParams(location.search);
+  const LAY = /^[abc]$/.test(qs.get('lay') || '') ? qs.get('lay') : 'a';
+  const EMBED = window.top !== window;
+  let labelMode = T.label || 'beide';
+  const fmt = T.fmt || '6v6';
+  const FMT_TXT = {'4v4':'4 tegen 4','6v6':'6 tegen 6','8v8':'8 tegen 8','11v11':'11 tegen 11'};
+  const initials = (T.team || 'VFC').replace(/^VFC\s*/i,'').replace(/[^A-Z0-9]/gi,'').slice(0,3) || 'VFC';
+  const TIPS = {
+    vorm:'Je ziet alleen de spelvorm van jouw team, volgens de KNVB. Rondo is voor de training: een partijvorm met een paar spelers in een vak.',
+    type:'Kies wat je wilt laten zien. Basisformaties toont je opstelling; de andere speltypes zijn voorbeelden met bewegingen die je kunt afspelen.',
+    weer:'Zet looplijnen, speeldriehoeken, namen of de tegenstander aan of uit. Met het draai-icoon zet je het veld rechtop.',
+    teken:'Versleep spelers en bal, of teken een passlijn, looplijn of zone op het veld. Met de gum haal je de tekeningen weg.',
+    fase:'Een fase is een momentopname. Zet spelers neer, klik op + Fase, en speel daarna alle fases achter elkaar af.'
+  };
+  const H = (k, t) => '<div class="vfc-h"><span>' + t + '</span><button class="vfc-i" data-tip="' + k + '" aria-label="Uitleg ' + t + '">i</button></div><div class="vfc-tip" id="tip-' + k + '">' + TIPS[k] + '</div>';
+  const SEG = () => '<div class="vfc-seg">' + [['nr','Nr'],['naam','Naam'],['beide','Nr + naam']].map(([v,l]) => '<button data-l="' + v + '" class="' + (labelMode === v ? 'on' : '') + '">' + l + '</button>').join('') + '</div>';
+
+  function rolesAndCoords(){
+    const base = (SUB_FORMATIONS[fmt] || [])[0];
+    const awayRoles = (base ? base.roles : []).map(r => [r[0], r[1]]);
+    let slots = (T.lineup && T.lineup.length) ? T.lineup : null;
+    if(!slots){
+      const tmp = buildScenarioData(fmt, 'formatie', 0), n = tmp.homePlayers.length;
+      const ps = T.players.slice(); const ki = ps.findIndex(p => p.keeper || (p.pos || []).includes('K'));
+      if(ki > 0) ps.unshift(ps.splice(ki, 1)[0]);
+      slots = tmp.homePlayers.map((hp, i) => ({role:hp.role, x:tmp.phases[0].home[i].x, y:tmp.phases[0].home[i].y, p:ps[i] || null})).slice(0, n);
+    }
+    const homeRoles = slots.map(s => {
+      const p = s.p, num = p && p.num ? String(p.num) : '', nm = p ? p.name : '';
+      if(labelMode === 'nr') return [num || s.role, ''];
+      if(labelMode === 'naam') return [s.role, nm || s.role];
+      return [num || s.role, nm];
+    });
+    while(awayRoles.length < homeRoles.length) awayRoles.push(['', '']);
+    return {homeRoles, awayRoles:awayRoles.slice(0, homeRoles.length), coords:slots.map(s => [s.x, s.y])};
+  }
+  function loadTeam(){
+    const r = rolesAndCoords();
+    isPlaying = false; updatePlayButtonUI(); currentPhaseIndex = 0; phaseProgress = 0; customDrawings = [];
+    activeData = buildFormationMovementScenario(r.homeRoles, r.awayRoles, r.coords, T.formName || 'jullie opstelling');
+    activeData.phases[0].title = 'Opstelling ' + (T.team || '') + (T.match ? ' · ' + T.match : '');
+    activeData.phases[0].desc = 'Versleep spelers en bal, teken passes en looplijnen, of speel de fases af.';
+    activeData.phases[0].tip = '';
+    showPlayerNames = labelMode !== 'nr';
+    selectedPlayer = null; updatePhaseUI(); updateScrubberUI();
+  }
+  /* alleen de eigen spelvorm en Rondo tonen */
+  function limitFormats(){
+    document.querySelectorAll('#formatTabs [data-format]').forEach(b => { if(b.dataset.format !== fmt && b.dataset.format !== 'training') b.remove(); });
+    const own = document.querySelector('#formatTabs [data-format="' + fmt + '"]');
+    if(own){ const s = own.querySelectorAll('span'); if(s[0]) s[0].textContent = FMT_TXT[fmt] || fmt; if(s[1]) s[1].remove(); }
+    const tr = document.querySelector('#formatTabs [data-format="training"] span'); if(tr) tr.textContent = 'Rondo';
+  }
+  const isBig = () => !document.body.classList.contains('vfc-calm');
+  function setBig(on){
+    document.body.classList.toggle('vfc-calm', !on);
+    if(EMBED) parent.postMessage({vfcTb: on ? 'big' : 'small'}, '*');
+    mini(); setTimeout(resizeCanvas, 80); setTimeout(resizeCanvas, 320);
+  }
+  function grab(sel){ const el = document.querySelector(sel); return el; }
+  function buildPanels(){
+    const toggles = ['btnTogglePaths','btnToggleTriangles','btnToggleNames','btnToggleOpponents'].map(id => document.getElementById(id)).filter(Boolean);
+    const rot = document.querySelector('header button[onclick="toggleOrientation()"]');
+    const focus = document.querySelector('header button[onclick="toggleFocusMode()"]');
+    const actions = '<div class="vfc-sec">' +
+        '<button class="vfc-btn" data-a="team"><i class="fa-solid fa-users"></i>Mijn opstelling</button>' +
+        '<button class="vfc-btn" data-a="pres"><i class="fa-solid fa-display"></i>Presenteren</button>' +
+        '<button class="vfc-btn" data-a="png"><i class="fa-solid fa-image"></i>Afbeelding opslaan</button>' +
+        (EMBED ? '<button class="vfc-btn gold" data-a="small"><i class="fa-solid fa-compress"></i>Terug naar het dashboard</button>' : '') + '</div>';
+    if(LAY === 'c'){
+      const g = document.createElement('div'); g.className = 'vfc-top';
+      g.innerHTML = '<span class="vfc-crest">' + initials + '</span><b>' + (T.team || '') + '</b>' + SEG();
+      const brand = document.querySelector('header .glass-bar > div > div'); brand.replaceWith(g);
+      limitFormats();
+      const right = document.querySelector('header .glass-bar > div:last-child');
+      const mk = (a, ic, t) => { const b = document.createElement('button'); b.dataset.a = a; b.title = t; b.className = 'w-8 h-8 rounded-xl bg-slate-900/70 hover:bg-slate-800 text-slate-300 hover:text-white border border-white/10 flex items-center justify-center transition'; b.innerHTML = '<i class="fa-solid ' + ic + ' text-xs"></i>'; return b; };
+      right.prepend(mk('png','fa-image','Afbeelding opslaan')); right.prepend(mk('team','fa-users','Mijn opstelling'));
+      if(EMBED){ const b = mk('small','fa-compress','Terug naar het dashboard'); b.classList.add('text-amber-300'); right.append(b); }
+      return;
+    }
+    const L = document.createElement('aside'); L.id = 'vfcLeft'; L.className = 'vfc-panel glass-bar ui-panel';
+    L.innerHTML = '<div class="vfc-team"><span class="vfc-crest">' + initials + '</span><div><b>' + (T.team || 'Mijn team') + '</b><small>' + (FMT_TXT[fmt] || fmt) + (T.formName ? ' · ' + T.formName : '') + '</small></div></div>' +
+      '<div class="vfc-sec"><div class="vfc-h"><span>Op de bolletjes</span></div>' + SEG() + '</div>' +
+      '<div class="vfc-sec" id="secVorm">' + H('vorm','Spelvorm') + '</div>' +
+      '<div class="vfc-sec" id="secType">' + H('type','Speltype') + '</div>' +
+      '<div class="vfc-sec" id="secWeer">' + H('weer','Weergave') + '<div class="vfc-row" id="rowWeer"></div></div>' +
+      (LAY === 'b' ? '' : '') + '<div style="flex:1"></div>' + actions;
+    document.body.appendChild(L);
+    limitFormats();
+    L.querySelector('#secVorm').append(grab('#formatTabs'));
+    L.querySelector('#secType').append(grab('#scenarioButtons'), grab('#subFormationPanel'));
+    const rw = L.querySelector('#rowWeer'); toggles.forEach(t => rw.append(t)); if(rot) rw.append(rot); if(focus) rw.append(focus);
+    if(LAY === 'a'){
+      const R = document.createElement('aside'); R.id = 'vfcRight'; R.className = 'vfc-panel glass-bar ui-panel';
+      R.innerHTML = '<div class="vfc-sec" id="secTeken">' + H('teken','Tekenen') + '</div><div class="vfc-sec" id="secFase">' + H('fase','Fases') + '<div class="vfc-play" id="rowPlay"></div></div>';
+      document.body.appendChild(R);
+      const ft = document.querySelector('footer .glass-bar');
+      const groups = ft.children; /* 0 afspelen, 1 fases, 2 tekenen */
+      const tools = groups[2]; tools.className = 'vfc-tools'; const gum = tools.querySelector('[onclick="clearDrawings()"]'); if(gum){ gum.className = 'tool-btn px-2.5 py-1.5 rounded-lg text-xs font-semibold text-rose-300 hover:bg-rose-500/15 transition flex items-center gap-1.5'; gum.insertAdjacentHTML('beforeend','<span>Wissen</span>'); } R.querySelector('#secTeken').append(tools);
+      R.querySelector('#rowPlay').append(groups[0]);
+      const mid = groups[0] || ft.querySelector('.flex-1');
+      const fases = ft.querySelector('#phasePillsContainer').closest('.flex-1.flex.items-center');
+      fases.className = 'vfc-fases';
+      const sp = fases.querySelector('.sm\\:flex'); if(sp) sp.classList.add('speedwrap');
+      R.querySelector('#secFase').append(fases);
+      const cc = document.getElementById('coachingCard'); if(cc){ R.insertAdjacentHTML('beforeend','<div style="flex:1"></div>'); R.append(cc); cc.className = 'vfc-coach'; }
+    }
+  }
+  function mini(){
+    let m = document.getElementById('vfcMini');
+    if(!m){ m = document.createElement('div'); m.id = 'vfcMini'; m.className = 'glass-bar'; document.body.appendChild(m); }
+    m.innerHTML = '<b>' + (T.team || '') + '</b>' + SEG() + '<button class="vfc-btn hide-sm" data-a="png"><i class="fa-solid fa-image"></i>Opslaan</button><button class="vfc-btn gold" data-a="big"><i class="fa-solid fa-expand"></i>Groter scherm en alle opties</button>';
+  }
+  function syncSeg(){ document.querySelectorAll('.vfc-seg button').forEach(b => b.classList.toggle('on', b.dataset.l === labelMode)); }
+  document.addEventListener('click', e => {
+    const i = e.target.closest('.vfc-i'); if(i){ const t = document.getElementById('tip-' + i.dataset.tip); t.classList.toggle('on'); i.classList.toggle('on'); return; }
+    const b = e.target.closest('[data-l],[data-a]'); if(!b || !b.closest('.vfc-panel,#vfcMini,.vfc-top,header')) return;
+    if(b.dataset.l){ labelMode = b.dataset.l; loadTeam(); syncSeg(); }
+    else if(b.dataset.a === 'team'){ if(currentFormat !== fmt) selectFormat(fmt); loadTeam(); }
+    else if(b.dataset.a === 'big') setBig(true);
+    else if(b.dataset.a === 'small') setBig(false);
+    else if(b.dataset.a === 'pres'){ if(!isFocusMode) toggleFocusMode(); }
+    else if(b.dataset.a === 'png'){
+      const a = document.createElement('a'); a.download = ((T.team || 'opstelling') + '.png').replace(/[^\w.\- ]+/g, ''); a.href = canvas.toDataURL('image/png'); document.body.appendChild(a); a.click(); a.remove();
+    }
+  });
+  document.addEventListener('keydown', e => { if(e.key === 'Escape' && EMBED && isBig() && !isFocusMode) setBig(false); });
+  const prev = window.onload;
+  window.onload = function(){
+    showTriangles = false; showOpponents = false; showPaths = false;
+    ['btnToggleTriangles','btnToggleOpponents','btnTogglePaths'].forEach(id => { const x = document.getElementById(id); if(x) x.classList.remove('icon-toggle-active'); });
+    document.body.classList.add('lay-' + LAY);
+    if(EMBED && !/[?&]meer=1/.test(location.search)) document.body.classList.add('vfc-calm');
+    if(prev) prev();
+    currentScenario = 'formatie';
+    document.querySelectorAll('.scenario-btn').forEach(btn => btn.classList.toggle('scenario-pill-active', btn.dataset.scenario === 'formatie'));
+    selectFormat(fmt);
+    buildPanels(); mini();
+    loadTeam(); resizeCanvas();
+    if(typeof toggleCoachCardCollapse === 'function' && !isCoachCardCollapsed) toggleCoachCardCollapse();
+    setTimeout(resizeCanvas, 150);
+  };
+})();
+</script>
+
+
+</body>
+</html>
