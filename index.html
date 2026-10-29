@@ -1491,8 +1491,8 @@ function adminWijzigingen(){
 }
 function viewAdmin(){
   const newMut = app.all.reduce((n,a) => n + (a.rec.mutaties||[]).filter(m=>m.status==='Nieuw').length, 0);
-  const tabs = [['aanvragen','Aanvragen'],['indeling','Teamindeling'],['planning','Teams en planning'],['spelers','Spelersregister'],['wijzigingen','Wijzigingen' + (newMut?` (${newMut})`:'')]];
-  const body = app.atab === 'indeling' ? adminIndeling() : app.atab === 'planning' ? adminPlanning() : app.atab === 'spelers' ? adminSpelers() : app.atab === 'wijzigingen' ? adminWijzigingen() : adminAanvragen();
+  const tabs = [['aanvragen','Aanvragen'],['indeling','Teamindeling'],['concepten','Concepten'],['planning','Teams en planning'],['spelers','Spelersregister'],['wijzigingen','Wijzigingen' + (newMut?` (${newMut})`:'')]];
+  const body = app.atab === 'indeling' ? adminIndeling() : app.atab === 'concepten' ? adminConcepten() : app.atab === 'planning' ? adminPlanning() : app.atab === 'spelers' ? adminSpelers() : app.atab === 'wijzigingen' ? adminWijzigingen() : adminAanvragen();
   return `<div class="stack"><div class="seg" role="tablist">${tabs.map(([k,l])=>`<label><input type="radio" name="atab" data-atab="${k}" ${app.atab===k?'checked':''}><span>${esc(l)}</span></label>`).join('')}</div>
     ${app.atab==='aanvragen' && app.note ? `<div class="msg ${app.note.kind}" role="status">${esc(app.note.text)}</div>` : ''}${body}</div>`;
 }
@@ -2508,6 +2508,44 @@ function parseIndeling(XLSX, buf){
   return out;
 }
 
+/* Concepten: meekijken met trainers die een klaargezet team aan het invullen zijn (alleen lezen) */
+async function loadConcepts(){
+  if(!app.db || app.cLoading) return; app.cLoading = true;
+  const out = {};
+  try{
+    const ps = Object.entries(app.prep || {}).filter(([, p]) => p.claimedBy && p.claimedBy !== 'ja');
+    await Promise.all(ps.map(async ([pid, p]) => { try{ const sn = await app.db.doc(`aanvragen/${p.claimedBy}/concept/current`).get(); out[pid] = sn.exists ? sn.data() : null; }catch(e){ out[pid] = {err:true}; } }));
+  }catch(e){}
+  app.concepts = out; app.cLoading = false; app.cAt = Date.now(); render();
+}
+function adminConcepten(){
+  if(!app.concepts && !app.cLoading) loadConcepts();
+  const preps = Object.entries(app.prep || {}).filter(([, p]) => p.claimedBy).sort((a, b) => (b[1].claimedAt || 0) - (a[1].claimedAt || 0));
+  const when = t => t ? new Date(t).toLocaleString('nl-NL', {weekday:'short', day:'numeric', month:'short', hour:'2-digit', minute:'2-digit'}) : '–';
+  const sent = team => app.all.some(a => a.rec.team === team);
+  const card = ([pid, p]) => {
+    const c = (app.concepts || {})[pid], d = c && c.d;
+    const head = `<div class="card-head" style="align-items:baseline;flex-wrap:wrap;gap:10px"><div><div class="kind">${esc(p.team)}</div><small class="hint">${esc((p.emails || []).join(', '))} · overgenomen ${when(p.claimedAt)}</small></div>${sent(p.team) ? pillAs('Verstuurd', 'Actief') : pillAs('Bezig met invullen', 'Nieuw')}</div>`;
+    if(sent(p.team)) return `<div class="card">${head}<p class="hint" style="margin:6px 0 0">Verstuurd; je vindt het team bij Aanvragen.</p></div>`;
+    if(app.cLoading && !app.concepts) return `<div class="card">${head}<p class="hint">Laden…</p></div>`;
+    if(!d) return `<div class="card">${head}<p class="hint" style="margin:6px 0 0">${c && c.err ? 'Kon het concept niet lezen.' : 'Nog niets bewaard: het team staat open, maar er is nog niets ingevuld.'}</p></div>`;
+    const pl = (d.players || []).filter(x => x.name && !x.left), withMail = pl.filter(x => (x.contacts || []).some(k => k.email) || x.email).length;
+    const st = (d.staff || []).filter(x => x.name || x.email), tr = (d.trainings || []).filter(x => x.day), ex = activeExtras({...d, on:d.on || {}});
+    const row = (k, v) => `<tr><td style="color:var(--muted);white-space:nowrap;padding:4px 14px 4px 0;vertical-align:top">${k}</td><td style="padding:4px 0">${v}</td></tr>`;
+    return `<div class="card">${head}<table style="margin-top:6px;font-size:15px">
+      ${row('Laatst bewaard', when(c.at || d._at))}
+      ${row('Spelers', `${withMail} van ${pl.length} met mailadres`)}
+      ${row('Staf', st.map(x => `${esc(x.name || '–')} <small class="hint">${esc(x.role || '')}${x.email ? ' · ' + esc(x.email) : ''}</small>`).join('<br>') || '–')}
+      ${row('Trainingen', tr.map(x => `${esc(x.day)} ${esc(x.from || '')}–${esc(x.to || '')}`).join(', ') || 'nog niet ingevuld')}
+      ${row("Extra's", ex.map(i => esc(i.title)).join(', ') || 'nog niets gekozen')}
+      </table>
+      <details style="margin-top:8px"><summary class="link-btn" style="cursor:pointer">Spelers en contacten bekijken</summary><ul style="margin:8px 0 0;padding-left:18px">${pl.map(x => `<li><b>${esc(x.name)}</b> <small class="hint">${(x.contacts || []).filter(k => k.name || k.email).map(k => esc([k.name, k.email].filter(Boolean).join(' '))).join(' · ') || 'geen contact'}</small></li>`).join('')}</ul></details></div>`;
+  };
+  return `<section class="panel"><div class="panel-head"><h2>Concepten</h2><p class="hint">Teams die een trainer heeft overgenomen en aan het invullen is. Je kijkt alleen mee; aanpassen doet de trainer. ${app.cAt ? 'Bijgewerkt ' + when(app.cAt) + '.' : ''}</p>
+    <div class="btns"><button type="button" class="ghost" data-crefresh="1">Vernieuwen</button></div></div>
+    ${preps.length ? `<div class="stack">${preps.map(card).join('')}</div>` : '<div class="empty">Nog geen enkel klaargezet team is door een trainer overgenomen.</div>'}</section>`;
+}
+document.addEventListener('click', e => { const b = e.target.closest('[data-crefresh]'); if(b){ app.concepts = null; loadConcepts(); render(); } });
 function adminIndeling(){
   const list = app.ind || Object.values(app.prep).sort((a, b) => ALL_TEAMS.indexOf(a.team) - ALL_TEAMS.indexOf(b.team));
   const status = t => { const p = app.prep[prepId(t.team)]; if(!p) return '<small>nog niet klaargezet</small>'; if(p.claimedBy) return pillAs('Overgenomen', 'Actief'); return (p.emails || []).length ? pillAs('Klaar voor trainer', 'In behandeling') : '<small>mailadres trainer ontbreekt</small>'; };
