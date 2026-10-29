@@ -2629,10 +2629,18 @@ function tactiekPayload(rec, dash){
   }
   return out;
 }
+/* Tactiekbord groter/kleiner binnen de app; de terugknop van de browser verkleint weer */
+function tbSize(f, big){
+  f.classList.toggle('tb-big', big); document.body.classList.toggle('tb-lock', big);
+}
 window.addEventListener('message', e => {
   const v = e.data && e.data.vfcTb; if(!v) return;
   const f = [...document.querySelectorAll('.tb-frame')].find(x => x.contentWindow === e.source); if(!f) return;
-  f.classList.toggle('tb-big', v === 'big'); document.body.classList.toggle('tb-lock', v === 'big');
+  if(v === 'big'){ tbSize(f, true); if(!(history.state && history.state.tbBig)) history.pushState({tbBig:1}, ''); }
+  else { tbSize(f, false); if(history.state && history.state.tbBig) history.back(); }
+});
+window.addEventListener('popstate', () => {
+  document.querySelectorAll('.tb-frame.tb-big').forEach(f => { tbSize(f, false); try{ f.contentWindow.postMessage({vfcTbSet:'small'}, '*'); }catch(e){} });
 });
 setInterval(() => { if(document.body.classList.contains('tb-lock') && !document.querySelector('.tb-frame.tb-big')) document.body.classList.remove('tb-lock'); }, 1000);
 function tactiekCard(rec, dash){
