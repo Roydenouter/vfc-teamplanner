@@ -293,6 +293,16 @@ td.tot{font-weight:700}
 .ring{width:70px;height:70px}
 .ring text{font-family:var(--f-display)}
 .reslist{list-style:none;margin:0;padding:0;display:grid}
+.attl{list-style:none;margin:6px 0 0;padding:0;columns:300px;column-gap:28px}
+.attl li{break-inside:avoid}
+.attl li{display:grid;grid-template-columns:minmax(80px,120px) 1fr auto 40px;gap:10px;align-items:center;padding:5px 0;border-bottom:1px solid var(--line)}
+.attl .an{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.attl .ab{display:flex;height:10px;border-radius:5px;overflow:hidden;background:var(--line)}
+.attl .ab i{display:block;height:100%}
+.attl .ab i.y,.attk.y{background:#5fbf7f}.attl .ab i.n,.attk.n{background:#c0584f}.attl .ab i.o,.attk.o{background:var(--line)}
+.attl b{font-family:var(--f-display);font-size:18px}.attl b small{font-size:12px;color:var(--muted);font-family:inherit}
+.attl .ap{color:var(--muted);text-align:right}
+.attk{display:inline-block;width:12px;height:10px;border-radius:3px;vertical-align:-1px;border:1px solid var(--line)}
 .res{display:grid;grid-template-columns:70px minmax(0,1fr) auto auto auto;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line)}
 .res:last-child{border-bottom:0}
 .r-date{font-weight:600;white-space:nowrap;display:grid}
@@ -1701,10 +1711,21 @@ function viewDash(){
       ${(() => { const played = ms.filter(m => Number.isFinite(m.gf) || m.date < today).reverse(); return played.length ? `<ul class="reslist">${played.map(resRow).join('')}</ul>` : '<p class="hint">Nog geen gespeelde wedstrijden.</p>'; })()}</div>`;
   const topCard = `<div class="card"><div class="kind">Topscorers</div>
       ${top.length ? `<ol class="tops">${top.map(([p,n],k) => `<li><i style="width:${(n/top[0][1]*100).toFixed(0)}%"></i><span class="rk">${k+1}</span><span>${esc(pname(p))}</span><b>${n}</b></li>`).join('')}</ol>` : '<p class="hint">Komt vanzelf zodra je bij een uitslag de doelpuntenmakers aantikt.</p>'}</div>`;
+  const attCard = (() => {
+    const past = ms.filter(m => m.date < today || Number.isFinite(m.gf)), N = past.length;
+    if(!N || !ps.length) return `<div class="card"><div class="kind">Aanwezigheid</div><p class="hint">Komt vanzelf zodra er wedstrijden gespeeld zijn waarbij je hebt aangetikt wie er kwam.</p></div>`;
+    const rows = ps.map(p => { let ja = 0, nee = 0; past.forEach(m => { const v = (m.att || {})[p.id]; if(v === 'ja') ja++; else if(v === 'nee') nee++; }); return {p, ja, nee, open:N - ja - nee}; })
+      .sort((a, b) => b.ja - a.ja || a.nee - b.nee || a.p.name.localeCompare(b.p.name));
+    const seg = (n, cls) => n ? `<i class="${cls}" style="width:${(n / N * 100).toFixed(1)}%"></i>` : '';
+    return `<div class="card"><div class="card-head" style="align-items:baseline;gap:10px;flex-wrap:wrap"><div class="kind">Aanwezigheid</div><small class="hint">${N} gespeelde wedstrijd${N === 1 ? '' : 'en'}, meest aanwezig bovenaan</small></div>
+      <ul class="attl">${rows.map(r => `<li><span class="an">${esc(r.p.name)}</span><span class="ab" title="${r.ja} aanwezig, ${r.nee} afgemeld, ${r.open} onbekend">${seg(r.ja, 'y')}${seg(r.nee, 'n')}${seg(r.open, 'o')}</span><b>${r.ja}<small>/${N}</small></b><small class="ap">${Math.round(r.ja / N * 100)}%</small></li>`).join('')}</ul>
+      <div class="legend2"><span><span class="attk y"></span> aanwezig</span><span><span class="attk n"></span> afgemeld</span><span><span class="attk o"></span> onbekend</span></div></div>`;
+  })();
   const rest = upcoming.slice(3);
   const progCard = `<div class="card"><div class="kind">Voetbalprogramma</div>${rest.length ? `<ul class="proglist">${rest.map(m => `<li><button type="button" class="pl-row${app.open.mcard === m.id ? ' sel' : ''}" data-mcard="${esc(m.id)}"><span class="pl-d">${fmt(m.date)}</span><span class="pl-tm">${esc(m.time||'')}</span><b class="pl-h">${sideName(m, true)}</b><small class="pl-x">vs</small><b class="pl-a">${sideName(m, false)}</b></button></li>`).join('')}</ul>` : '<p class="hint">Alle bekende wedstrijden staan bovenaan. Nieuwe wedstrijden komen hier vanzelf bij.</p>'}</div>`;
   const rulesTile = cat && cat.rules ? `<a class="tile-link" href="${cat.rules}" target="_blank" rel="noopener"><span class="tl-ic">${icon('oefenstof')}</span><span><b>Spelregels ${esc(cat.label)}</b><small>${esc(cat.desc)} · KNVB</small></span><span class="tl-go">↗</span></a>` : '';
   const results = `<div class="dquad">${cat && cat.stand ? resCard + standHTML(rec, dash, uidv) + progCard + topCard : youngT(rec.team) ? resCard + progCard : resCard + topCard + `<div class="span2">${progCard}</div>`}</div>
+  <div style="margin-top:16px">${attCard}</div>
   ${rulesTile && !bigField(rec.team) ? rulesTile : ''}`;
 
   /* taken */
