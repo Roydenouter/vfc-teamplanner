@@ -840,7 +840,10 @@ const attList = d => (d.att && d.att.to && d.att.to.length) ? d.att.to : (slist(
 const cnames = p => (p.contacts||[]).map(c => c.name.trim()).filter(Boolean).join(', ');
 /* Siroop alleen voor de kleine velden: vanaf O13 spelen ze 11 tegen 11 en gaan ze in de rust naar de kleedkamer (thee van de club). Navragen bij VFC. */
 const SIROOP_TOT = 12;
-const offered = d => EXTRA.filter(i => !(i.id === 'siroop' && ageOf(d.team) > SIROOP_TOT));
+/* O7 t/m O10: KNVB publiceert geen uitslagen en standen; wij tonen wel de uitslag, maar geen W-G-V, vorm en doelpuntenmakers */
+const youngT = t => { const a = ageOf(t); return a > 0 && a <= 10; };
+const shortTxt = (n, of) => n < of ? `Te weinig spelers: ${n} van de ${of}, je komt er ${of - n} tekort. Iedereen speelt de hele wedstrijd; deze wedstrijd telt niet mee voor de verdeling.` : `Precies genoeg spelers (${n}): er wordt niet gewisseld. Deze wedstrijd telt niet mee voor de verdeling.`;
+const offered = d => { const a = ageOf(d.team); return EXTRA.filter(i => !(a && ((i.id === 'siroop' && a > SIROOP_TOT) || (i.id === 'spelbegeleider' && a > 10) || (i.id === 'vlaggen' && a < 13)))); };
 const ageOf = t => { const m = /\b(?:JO|MO|O)(\d+)/i.exec(t || ''); return m ? +m[1] : 0; };
 const activeExtras = d => offered(d).filter(i => d.on[i.id]);
 const getVal = (d,i,f) => { const v = d.val[i.id]; return (v && v[f.id] != null) ? v[f.id] : ''; };
@@ -1124,9 +1127,9 @@ function stepPlayers(d){
     <div class="field"><span class="label">Berichten over wedstrijden, aanwezigheid en taken gaan naar</span>
       <div class="seg">${MSGTO.map(([v,l]) => `<label><input type="radio" name="msgto" data-msgto="${v}" ${mt===v?'checked':''}><span>${l}</span></label>`).join('')}</div>
       <p class="hint" style="margin:0">${d.msgTo ? '' : `Standaard voor ${age ? 'O' + age : 'dit team'}: ${esc((MSGTO.find(x => x[0] === mt) || [0,''])[1].toLowerCase())}. `}Tot en met O12 meestal de ouders, vanaf O16 meestal de speler zelf.${mt === 'speler' && age && age < 16 ? ' Let op: onder de 16 is toestemming van een ouder nodig; we vragen die bij de eerste mail.' : ''}</p></div>
-    <label class="switch"><input type="checkbox" data-numpos="1" ${d.numPos ? 'checked' : ''}><span class="sw"></span><span>Rugnummers en posities</span></label>
+    ${teamAge(d.team) >= 13 ? `<label class="switch"><input type="checkbox" data-numpos="1" ${d.numPos ? 'checked' : ''}><span class="sw"></span><span>Rugnummers en posities</span></label>` : ''}
     <div class="pblocks">${d.players.filter(p => !p.left).map((p,k)=>`<div class="pblock">
-      <div class="phead2${d.numPos ? ' np' : ''}"><span class="n">${k+1}</span>${d.numPos ? `<input type="text" inputmode="numeric" maxlength="2" class="pnum" id="pr-${p.id}" data-pnum="${p.id}" value="${esc(p.num || '')}" placeholder="nr" aria-label="Rugnummer speler ${k+1}">` : ''}<input type="text" id="pn-${p.id}" data-p="${p.id}" value="${esc(p.name)}" placeholder="voornaam speler" aria-label="Voornaam speler ${k+1}">${d.numPos ? `<details class="pdd"><summary aria-label="Posities speler ${k+1}"><span id="psum-${p.id}" class="${(p.pos || []).length ? '' : 'ph'}">${(p.pos || []).length ? esc(p.pos.join(', ')) : 'Positie'}</span><span class="car" aria-hidden="true">▾</span></summary><div class="pdd-list" role="group" aria-label="Posities speler ${k+1}">${POS.map(([c, l]) => `<button type="button" class="pdd-opt${(p.pos || []).includes(c) ? ' on' : ''}" data-ppos="${p.id}|${c}" aria-pressed="${(p.pos || []).includes(c)}"><span class="ck" aria-hidden="true"></span><b>${c}</b> ${l}</button>`).join('')}<p class="hint" style="margin:6px 8px 2px">Meerdere kiezen mag.</p></div></details>` : ''}<button type="button" class="icon-btn" data-del="${p.id}" aria-label="Verwijder speler ${k+1}">×</button></div>
+      <div class="phead2${d.numPos && teamAge(d.team) >= 13 ? ' np' : ''}"><span class="n">${k+1}</span>${d.numPos && teamAge(d.team) >= 13 ? `<input type="text" inputmode="numeric" maxlength="2" class="pnum" id="pr-${p.id}" data-pnum="${p.id}" value="${esc(p.num || '')}" placeholder="nr" aria-label="Rugnummer speler ${k+1}">` : ''}<input type="text" id="pn-${p.id}" data-p="${p.id}" value="${esc(p.name)}" placeholder="voornaam speler" aria-label="Voornaam speler ${k+1}">${d.numPos && teamAge(d.team) >= 13 ? `<details class="pdd"><summary aria-label="Posities speler ${k+1}"><span id="psum-${p.id}" class="${(p.pos || []).length ? '' : 'ph'}">${(p.pos || []).length ? esc(p.pos.join(', ')) : 'Positie'}</span><span class="car" aria-hidden="true">▾</span></summary><div class="pdd-list" role="group" aria-label="Posities speler ${k+1}">${POS.map(([c, l]) => `<button type="button" class="pdd-opt${(p.pos || []).includes(c) ? ' on' : ''}" data-ppos="${p.id}|${c}" aria-pressed="${(p.pos || []).includes(c)}"><span class="ck" aria-hidden="true"></span><b>${c}</b> ${l}</button>`).join('')}<p class="hint" style="margin:6px 8px 2px">Meerdere kiezen mag.</p></div></details>` : ''}<button type="button" class="icon-btn" data-del="${p.id}" aria-label="Verwijder speler ${k+1}">×</button></div>
       ${wantSelf ? `<div class="crows"><span class="label" style="font-size:12px">Speler zelf</span><div class="crow">
         <input type="email" class="em ${badMail((p.self||{}).email)?'bad':''}" id="se-${p.id}" data-ps="${p.id}" data-pk="email" value="${esc((p.self||{}).email||'')}" placeholder="mailadres speler" aria-label="Mailadres speler ${k+1}">
         <input type="tel" id="sp-${p.id}" data-ps="${p.id}" data-pk="phone" value="${esc((p.self||{}).phone||'')}" placeholder="mobiel speler" aria-label="Mobiel speler ${k+1}"><span></span></div></div>` : ''}
@@ -1647,8 +1650,8 @@ function viewDash(){
         <div class="kind">Seizoen ${esc(seasonOf(rec.season.start))}</div>
         <h2 class="hteam">${esc(rec.team)}</h2>
         <p class="hint hstaff" style="margin:0">${staff.map(esc).join('<br>')}</p>
-        <div class="hrec"><b class="hi">${st.w}</b><span>W</span><b>${st.g}</b><span>G</span><b>${st.v}</b><span>V</span></div>
-        <div class="form-row" style="min-height:22px">${st.form.length ? `<span class="label">Vorm</span>${st.form.map(dot).join('')}` : ''}</div>
+        ${youngT(rec.team) ? '' : `<div class="hrec"><b class="hi">${st.w}</b><span>W</span><b>${st.g}</b><span>G</span><b>${st.v}</b><span>V</span></div>
+        <div class="form-row" style="min-height:22px">${st.form.length ? `<span class="label">Vorm</span>${st.form.map(dot).join('')}` : ''}</div>`}
       </div>
       <div class="hmatches">${upcoming.length ? upcoming.slice(0, 3).map((m, k) => mcard(m, k === 0)).join('') : '<p class="hint">Nog geen wedstrijden bekend. Ze komen straks vanzelf uit Voetbal.nl (Sportlink).</p>'}</div>
     </section>
@@ -1675,8 +1678,8 @@ function viewDash(){
         <div class="field"><label class="label" for="mgf">Doelpunten VFC</label><input type="number" id="mgf" min="0" max="40" data-mf2="gf" value="${Number.isFinite(m.gf)?m.gf:''}" placeholder="–"></div>
         <div class="field"><label class="label" for="mga">Doelpunten tegenstander</label><input type="number" id="mga" min="0" max="40" data-mf2="ga" value="${Number.isFinite(m.ga)?m.ga:''}" placeholder="–"></div>
       </div>
-      <div class="field"><span class="label">Doelpuntenmakers</span><p class="hint">Met + tel je een doelpunt erbij, met − haal je er een af.</p>
-        <div class="chips">${ps.map(p => { const n = (m.scorers||{})[p.id] || 0; return `<span class="pchip${n?' on':''}">${n?`<button type="button" class="pc-min" data-scm="${p.id}" aria-label="Doelpunt ${esc(p.name)} eraf">−</button>`:''}<button type="button" class="pc-add" data-sc="${p.id}">${esc(p.name)}${n?` <b>${n}</b>`:''}</button><button type="button" class="pc-plus" data-sc="${p.id}" aria-label="Doelpunt ${esc(p.name)} erbij">+</button></span>`; }).join('')}</div></div>
+      ${youngT(rec.team) ? '' : `<div class="field"><span class="label">Doelpuntenmakers</span><p class="hint">Met + tel je een doelpunt erbij, met − haal je er een af.</p>
+        <div class="chips">${ps.map(p => { const n = (m.scorers||{})[p.id] || 0; return `<span class="pchip${n?' on':''}">${n?`<button type="button" class="pc-min" data-scm="${p.id}" aria-label="Doelpunt ${esc(p.name)} eraf">−</button>`:''}<button type="button" class="pc-add" data-sc="${p.id}">${esc(p.name)}${n?` <b>${n}</b>`:''}</button><button type="button" class="pc-plus" data-sc="${p.id}" aria-label="Doelpunt ${esc(p.name)} erbij">+</button></span>`; }).join('')}</div></div>`}
       <div class="field"><span class="label">Wie waren er</span>
         <div class="chips">${ps.map(p => { const v = (m.att||{})[p.id] === 'ja'; return `<button type="button" class="achip ${v?'ja':''}" data-matt="${p.id}">${esc(p.name)}<small>${v?'was er':'–'}</small></button>`; }).join('')}</div></div>
       ${m.err ? `<p class="errline">${esc(m.err)}</p>` : ''}
@@ -1701,7 +1704,7 @@ function viewDash(){
   const rest = upcoming.slice(3);
   const progCard = `<div class="card"><div class="kind">Voetbalprogramma</div>${rest.length ? `<ul class="proglist">${rest.map(m => `<li><button type="button" class="pl-row${app.open.mcard === m.id ? ' sel' : ''}" data-mcard="${esc(m.id)}"><span class="pl-d">${fmt(m.date)}</span><span class="pl-tm">${esc(m.time||'')}</span><b class="pl-h">${sideName(m, true)}</b><small class="pl-x">vs</small><b class="pl-a">${sideName(m, false)}</b></button></li>`).join('')}</ul>` : '<p class="hint">Alle bekende wedstrijden staan bovenaan. Nieuwe wedstrijden komen hier vanzelf bij.</p>'}</div>`;
   const rulesTile = cat && cat.rules ? `<a class="tile-link" href="${cat.rules}" target="_blank" rel="noopener"><span class="tl-ic">${icon('oefenstof')}</span><span><b>Spelregels ${esc(cat.label)}</b><small>${esc(cat.desc)} · KNVB</small></span><span class="tl-go">↗</span></a>` : '';
-  const results = `<div class="dquad">${cat && cat.stand ? resCard + standHTML(rec, dash, uidv) + progCard + topCard : resCard + topCard + `<div class="span2">${progCard}</div>`}</div>
+  const results = `<div class="dquad">${cat && cat.stand ? resCard + standHTML(rec, dash, uidv) + progCard + topCard : youngT(rec.team) ? resCard + progCard : resCard + topCard + `<div class="span2">${progCard}</div>`}</div>
   ${rulesTile && !bigField(rec.team) ? rulesTile : ''}`;
 
   /* taken */
@@ -1726,8 +1729,8 @@ function viewDash(){
         <div class="tablewrap"><table class="tt"><thead><tr><th>Speler</th>${head}</tr></thead><tbody>${rows}</tbody></table></div></div>`;
   })() : '<div class="empty">Dit team heeft geen taken met een rooster gekozen.</div>';
   const taken = `${td.tasks.length ? `<div class="exp-row"><p class="hint" style="margin:0">Vraagt iemand om het rooster? Maak er een pdf van om te delen of te printen.</p><button type="button" class="ghost" data-export="${esc(uidv)}|${esc(rec.key)}">${icon('export')} Rooster exporteren (pdf)</button></div>${app.expMsg ? `<p class="hint">${esc(app.expMsg)}</p>` : ''}` : ''}${tasksHTML}`;
-  const sec = ['taken','wissel','tactiek'].includes(app.dsec) || (app.dsec === 'opstelling' && bigField(rec.team)) ? app.dsec : 'voetbal';
-  const subtabs = `<nav class="dtabs" role="tablist" aria-label="Onderdelen teamdashboard"><button type="button" role="tab" class="dtab" data-dsec="voetbal" aria-selected="${sec==='voetbal'}">${icon('ballen')} Voetbalzaken</button><button type="button" role="tab" class="dtab" data-dsec="taken" aria-selected="${sec==='taken'}">${icon('oefenstof')} Team Taken</button><button type="button" role="tab" class="dtab" data-dsec="wissel" aria-selected="${sec==='wissel'}">${icon('wissel')} Wisselschema</button>${bigField(rec.team) ? `<button type="button" role="tab" class="dtab" data-dsec="opstelling" aria-selected="${sec==='opstelling'}">${icon('pitch')} Opstelling</button>` : ''}<button type="button" role="tab" class="dtab" data-dsec="tactiek" aria-selected="${sec==='tactiek'}">${icon('people')} Tactiekbord</button></nav>`;
+  const sec = ['taken','wissel'].includes(app.dsec) || (['opstelling','tactiek'].includes(app.dsec) && bigField(rec.team)) ? app.dsec : 'voetbal';
+  const subtabs = `<nav class="dtabs" role="tablist" aria-label="Onderdelen teamdashboard"><button type="button" role="tab" class="dtab" data-dsec="voetbal" aria-selected="${sec==='voetbal'}">${icon('ballen')} Voetbalzaken</button><button type="button" role="tab" class="dtab" data-dsec="taken" aria-selected="${sec==='taken'}">${icon('oefenstof')} Team Taken</button><button type="button" role="tab" class="dtab" data-dsec="wissel" aria-selected="${sec==='wissel'}">${icon('wissel')} Wisselschema</button>${bigField(rec.team) ? `<button type="button" role="tab" class="dtab" data-dsec="opstelling" aria-selected="${sec==='opstelling'}">${icon('pitch')} Opstelling</button><button type="button" role="tab" class="dtab" data-dsec="tactiek" aria-selected="${sec==='tactiek'}">${icon('people')} Tactiekbord</button>` : ''}</nav>`;
 
   return `<div class="stack">
     ${inviteBanner()}${transferBanner()}${prepBanner()}${sharedNote(list)}
@@ -1839,8 +1842,11 @@ function makeLineup(rec, dash, m){
   const keepOrder = order.slice().sort((a,b) => (tally.keep[a]||0) - (tally.keep[b]||0) || order.indexOf(a) - order.indexOf(b));
   const useKeeper = c.keeper && rule.keeper !== 'vrij';
   const isOut = (pid, bi) => ov.out[pid] != null && ov.out[pid] <= bi;
+  const kFav = dash.keepFav || {}, isK = p => p.keeper || (p.pos || []).includes('K');
+  const fixedK = c.keeperFixed ? ((present.find(isK) || {}).id || (present.find(p => kFav[p.id]) || {}).id || null) : null;
   const keepers = blocks.map((b, bi) => {
     if(!useKeeper) return null;
+    if(fixedK && !isOut(fixedK, bi) && !Object.keys(ov.keep).length) return fixedK;
     const keys = Object.keys(ov.keep).map(Number).filter(k => k <= bi).sort((x,y) => y - x);
     const forced = keys.length ? ov.keep[keys[0]] : null;
     if(forced && !isOut(forced, bi) && order.includes(forced)) return forced;
@@ -1882,7 +1888,7 @@ function wsPanel(rec, dash, m, uidv){
   }).join('');
   return `<div class="card ws">
     <div class="card-head" style="align-items:flex-start"><div><div class="kind">Wisselschema · ${lu.n} spelers</div>
-      <p class="hint" style="margin:2px 0 0">${c.periods} × ${c.periodMin} minuten, ${c.field} veldspelers${c.keeper ? ' en een keeper' : ''}. ${lu.n <= onField(c) ? 'Precies genoeg of te weinig spelers: geen wissels, deze wedstrijd telt niet mee voor de verdeling.' : `${intLabel}${c.keeper ? ', keeper ' + kLabel.toLowerCase() : ''}.`}${lu.marked ? '' : ' Er is nog niemand op ✓ gezet, dus het schema rekent met het hele team.'}</p></div>
+      <p class="hint" style="margin:2px 0 0">${c.periods} × ${c.periodMin} minuten, ${c.field} veldspelers${c.keeper ? ' en een keeper' : ''}. ${lu.n <= onField(c) ? shortTxt(lu.n, onField(c)) : `${intLabel}${c.keeper ? ', keeper ' + kLabel.toLowerCase() : ''}.`}${lu.marked ? '' : ' Er is nog niemand op ✓ gezet, dus het schema rekent met het hele team.'}</p></div>
       </div>
     ${m.lineup && m.lineup.adj ? '<p class="hint" style="margin:0">De minuten van deze wedstrijd zijn achteraf aangepast. Het seizoensoverzicht rekent met die aangepaste minuten.</p>' : ''}
     <div class="tablewrap"><table class="wst"><thead><tr><th>Speler</th>${head}<th class="nc">Speeltijd</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>
@@ -1908,7 +1914,7 @@ function wsSettings(rec){
     ${ns.length ? '' : '<p class="hint">Er zijn niet meer spelers dan plekken in het veld, dus er valt niets te wisselen.</p>'}
     ${ns.length ? `<div class="tablewrap"><table><thead><tr><th>Aanwezig</th><th>Wisselen</th>${c.keeper ? '<th>Keeper</th>' : ''}</tr></thead><tbody>
       ${ns.map(n => { const r = wsRule(c, n); return n <= of
-        ? `<tr><td><b>${n} spelers</b></td><td colspan="${c.keeper ? 2 : 1}"><small>${n === of ? 'Precies genoeg: geen wissels, telt niet mee voor de verdeling' : 'Te weinig spelers: iedereen speelt alles'}</small></td></tr>`
+        ? `<tr><td><b>${n} spelers</b></td><td colspan="${c.keeper ? 2 : 1}"><small>${n === of ? 'Precies genoeg: geen wissels, telt niet mee voor de verdeling' : `Te weinig spelers: ${of - n} tekort, iedereen speelt alles`}</small></td></tr>`
         : `<tr><td><b>${n} spelers</b> <small>${n - of} wissel${n - of > 1 ? 's' : ''}</small></td><td>${sel('ws-i-'+n, WS_INT.filter(x => x[0] !== 'geen'), r.interval, `data-wsr="${n}|interval"`)}</td>${c.keeper ? `<td>${sel('ws-q-'+n, WS_KEEP, r.keeper, `data-wsr="${n}|keeper"`)}</td>` : ''}</tr>`; }).join('')}
     </tbody></table></div>` : ''}
     ${app.wsDraft && app.wsDraft.key === rec.key ? `<div class="btns"><button type="button" class="primary" data-wssave="${esc(rec.key)}">Opslaan</button><button type="button" class="ghost" data-wscancel="1">Annuleren</button>${app.wsDraft.msg ? `<span class="status">${esc(app.wsDraft.msg)}</span>` : ''}</div>` : (app.wsMsg ? `<p class="hint">${esc(app.wsMsg)}</p>` : '')}
@@ -2340,7 +2346,7 @@ function wsTab(rec, dash, uidv){
             c.keeper ? ['glove', c.keeperFixed ? '1 vaste keeper' : '1 keeper'] : null
           ].filter(Boolean).map(([i, t]) => `<li>${icon(i)}<span>${esc(t)}</span></li>`).join(''); })()}</ul></div>
           ${lu.n > of ? `<div class="field"><label class="label" for="wsiv">Wissel elke</label>${sel('id="wsiv" data-wsset="interval"', ivs, cur)}</div>
-          ${c.keeper ? `<div class="field"><label class="label" for="wskp">Keepers</label>${sel('id="wskp" data-wsset="keeper"', WS_KEEP, lu.rule.keeper)}</div>` : ''}` : `<p class="hint" style="margin:0">Met ${lu.n} spelers wordt er niet gewisseld. Deze wedstrijd telt niet mee voor de verdeling.</p>`}
+          ${c.keeper ? `<div class="field"><label class="label" for="wskp">Keepers</label>${sel('id="wskp" data-wsset="keeper"', WS_KEEP, lu.rule.keeper)}</div>` : ''}` : `<p class="hint" style="margin:0">${shortTxt(lu.n, of)}</p>`}
         </div>
       </div></div>
       ${wsPanel(rec, dash, m, uidv)}
@@ -2362,7 +2368,7 @@ function wsAdjCard(rec, m, lu, uidv){
     <div class="btns"><button type="button" class="primary" data-wsadjsave="${esc(uidv)}|${esc(rec.key)}|${esc(m.id)}">Opslaan</button><button type="button" class="ghost" data-wsadjcancel="1">Annuleren</button>${m.lineup && m.lineup.adj ? `<button type="button" class="link-btn" style="margin-left:auto" data-wsadjreset="${esc(uidv)}|${esc(rec.key)}|${esc(m.id)}">Terug naar het schema</button>` : ''}</div></div>`;
 }
 function wsSeasonCard(rec, dash, uidv){
-  const {per, used} = wsSeason(dash), fav = dash.keepFav || {}, ps = plist(rec);
+  const {per, used} = wsSeason(dash), fav = dash.keepFav || {}, ps = plist(rec), favLbl = (wsCfg(dash, rec) || {}).keeperFixed ? 'reservekeeper' : 'keept graag';
   const rows = ps.map(p => ({p, s:per[p.id] || {veld:0, keep:0, bank:0, n:0}}));
   const max = Math.max(1, ...rows.map(r => r.s.veld + r.s.keep + r.s.bank));
   const pct = (a, b) => b ? Math.round(a / b * 100) : 0;
@@ -2373,10 +2379,10 @@ function wsSeasonCard(rec, dash, uidv){
     ${app.expMsg ? `<p class="hint">${esc(app.expMsg)}</p>` : ''}
     ${(dash.matches || []).some(m => m.lineup && m.lineup.demo) ? '<p class="hint" style="margin:0">De minuten van de gespeelde wedstrijden zijn demogegevens.</p>' : ''}
     <ul class="wsbars">${rows.map(({p, s}) => { const tot = s.veld + s.keep + s.bank, play = s.veld + s.keep; return `<li>
-      <span class="wsb-n"><button type="button" class="glove${fav[p.id] ? ' on' : ''}" data-wsfav="${esc(uidv)}|${esc(rec.key)}|${p.id}" aria-pressed="${!!fav[p.id]}" title="${fav[p.id] ? 'Keept graag' : 'Markeer als: keept graag'}">${icon('glove')}</button><b>${esc(p.name)}</b></span>
+      <span class="wsb-n"><button type="button" class="glove${fav[p.id] ? ' on' : ''}" data-wsfav="${esc(uidv)}|${esc(rec.key)}|${p.id}" aria-pressed="${!!fav[p.id]}" title="${fav[p.id] ? favLbl[0].toUpperCase() + favLbl.slice(1) : 'Markeer als: ' + favLbl}">${icon('glove')}</button><b>${esc(p.name)}</b></span>
       <span class="wsb-bar" title="Veld ${s.veld}' · keeper ${s.keep}' · wissel ${s.bank}'"><i class="v" style="width:${(s.veld / max * 100).toFixed(1)}%"></i><i class="k" style="width:${(s.keep / max * 100).toFixed(1)}%"></i><i class="b" style="width:${(s.bank / max * 100).toFixed(1)}%"></i></span>
       <span class="wsb-t">${tot ? `<span><b>${play}'</b> gespeeld · ${s.bank}' wissel</span><small>${s.keep ? `keeper ${pct(s.keep, play)}% · veld ${pct(s.veld, play)}%` : 'niet gekeept'}</small>` : '<small>nog geen minuten</small>'}</span></li>`; }).join('')}</ul>
-    <div class="legend2"><span><span class="wsc f sm"></span> veld</span><span><span class="wsc k sm"></span> keeper</span><span><span class="wsc b sm"></span> wissel</span><span>${icon('glove')} keept graag</span></div>
+    <div class="legend2"><span><span class="wsc f sm"></span> veld</span><span><span class="wsc k sm"></span> keeper</span><span><span class="wsc b sm"></span> wissel</span><span>${icon('glove')} ${favLbl}</span></div>
   </div>`;
 }
 async function exportWS(uidv, key){
