@@ -2916,31 +2916,103 @@
             requestAnimationFrame(animationLoop);
         };
     </script>
-<!-- VFC Teamplanner: teammodus (eigen spelers, rustige standaard, presenteren, afbeelding opslaan) -->
+<!-- VFC Teamplanner: teammodus v2 (eigen spelvorm, bedieningspaneel, groter scherm binnen de app) -->
 <style>
-#vfcBar{position:fixed;left:50%;transform:translateX(-50%);bottom:12px;z-index:60;display:flex;gap:6px;align-items:center;flex-wrap:wrap;justify-content:center;background:rgba(15,15,12,.88);border:1px solid rgba(217,180,74,.35);border-radius:999px;padding:6px 10px;font:600 13px/1 system-ui,sans-serif;color:#f1eee4;backdrop-filter:blur(6px);max-width:calc(100% - 24px)}
-#vfcBar b{color:#d9b44a;margin-right:4px;white-space:nowrap}
-#vfcBar button{border:1px solid rgba(255,255,255,.18);background:none;color:#f1eee4;border-radius:999px;padding:6px 11px;font:inherit;cursor:pointer;white-space:nowrap}
-#vfcBar button.on{background:#d9b44a;border-color:#d9b44a;color:#14140f}
-#vfcBar .sep{width:1px;height:18px;background:rgba(255,255,255,.18);margin:0 2px}
-body.vfc-calm .ui-hide-on-focus,body.vfc-calm .ui-hide-bottom-on-focus{display:none!important}
-body:not(.vfc-calm) #vfcBar{top:68px;bottom:auto}
-body.focus-mode #vfcBar{bottom:8px;opacity:.55}body.focus-mode #vfcBar:hover{opacity:1}
+.vfc-panel{position:fixed;top:12px;bottom:12px;z-index:40;width:236px;border-radius:18px;padding:14px 12px;display:flex;flex-direction:column;gap:12px;overflow-y:auto;color:#e2e8f0}
+.vfc-panel::-webkit-scrollbar{width:0}
+#vfcLeft{left:12px}#vfcRight{right:12px}
+.vfc-sec{display:flex;flex-direction:column;gap:7px}
+.vfc-h{display:flex;align-items:center;justify-content:space-between;font:800 10px/1 Inter,system-ui,sans-serif;letter-spacing:.09em;text-transform:uppercase;color:#94a3b8}
+.vfc-i{width:18px;height:18px;border-radius:50%;border:1px solid rgba(255,255,255,.18);background:none;color:#94a3b8;font:700 10px/1 Georgia,serif;font-style:italic;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0}
+.vfc-i:hover,.vfc-i.on{color:#fb923c;border-color:rgba(249,115,22,.6)}
+.vfc-tip{display:none;font:400 11.5px/1.45 Inter,system-ui,sans-serif;color:#cbd5e1;background:rgba(2,6,23,.55);border:1px solid rgba(255,255,255,.07);border-radius:10px;padding:8px 9px}
+.vfc-tip.on{display:block}
+.vfc-team{display:flex;align-items:center;gap:10px;padding-bottom:12px;border-bottom:1px solid rgba(255,255,255,.08)}
+.vfc-crest{width:34px;height:34px;border-radius:11px;background:#d9b44a;color:#14140f;display:flex;align-items:center;justify-content:center;font:800 12px/1 Inter,sans-serif;flex:none;box-shadow:0 4px 14px -3px rgba(217,180,74,.5)}
+.vfc-team b{display:block;font:800 14px/1.1 Inter,sans-serif;color:#fff}
+.vfc-team small{font:600 11px/1.3 Inter,sans-serif;color:#94a3b8}
+.vfc-seg{display:flex;background:rgba(2,6,23,.6);border:1px solid rgba(255,255,255,.06);border-radius:11px;padding:3px;gap:2px}
+.vfc-seg button{flex:1;border:0;background:none;color:#94a3b8;font:600 11.5px/1 Inter,sans-serif;padding:7px 4px;border-radius:8px;cursor:pointer}
+.vfc-seg button.on{background:rgba(255,255,255,.13);color:#fff}
+.vfc-btn{display:flex;align-items:center;gap:9px;width:100%;border:1px solid rgba(255,255,255,.08);background:rgba(2,6,23,.45);color:#e2e8f0;font:600 12px/1 Inter,sans-serif;padding:9px 11px;border-radius:11px;cursor:pointer;text-align:left}
+.vfc-tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:5px}
+.vfc-tile{display:flex;flex-direction:column;align-items:center;gap:6px;border:1px solid rgba(255,255,255,.08);background:rgba(2,6,23,.45);color:#e2e8f0;font:600 10.5px/1 Inter,sans-serif;padding:10px 2px 9px;border-radius:11px;cursor:pointer}
+.vfc-tile i{font-size:14px;color:#94a3b8}.vfc-tile:hover{background:rgba(255,255,255,.08)}.vfc-tile:hover i{color:#fb923c}
+.vfc-btn:hover{background:rgba(255,255,255,.08)}
+.vfc-btn i{width:14px;text-align:center;color:#94a3b8}
+.vfc-btn.gold{background:linear-gradient(135deg,#e7c45e,#c99a2e);color:#14140f;border-color:transparent}.vfc-btn.gold i{color:#14140f}
+/* verplaatste onderdelen van het bord netjes in de kolom */
+.vfc-panel #formatTabs{display:flex;flex-wrap:wrap;gap:4px;overflow:visible}
+.vfc-panel #formatTabs button{flex:1 1 auto;justify-content:center}
+.vfc-panel #scenarioButtons{display:flex;flex-direction:column;gap:4px;overflow:visible;background:none;border:0;padding:0}
+.vfc-panel #scenarioButtons button{width:100%;padding-top:6px;padding-bottom:6px;justify-content:flex-start;border:1px solid rgba(255,255,255,.06);background:rgba(2,6,23,.4)}
+.vfc-panel #scenarioButtons button span{display:inline!important}
+.vfc-panel #subFormationPanel{display:block!important;width:100%}
+.vfc-panel #formationSelect{width:100%}
+.vfc-panel .vfc-row{display:flex;flex-wrap:wrap;gap:5px}
+.vfc-panel .vfc-tools{display:flex;flex-direction:column;gap:3px;background:rgba(2,6,23,.55);border:1px solid rgba(255,255,255,.05);border-radius:12px;padding:4px}
+.vfc-panel .vfc-tools button{width:100%;justify-content:flex-start;padding:8px 10px}
+.vfc-panel .vfc-tools button span{display:inline!important}
+.vfc-panel .vfc-play{display:flex;align-items:center;gap:6px}
+.vfc-panel .vfc-play #btnPlayPause{flex:1;justify-content:center}
+.vfc-panel #phasePillsContainer{flex-wrap:wrap}
+.vfc-panel .speedwrap{display:flex!important}
+.vfc-panel .vfc-fases{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.vfc-panel .vfc-fases>div:first-child{flex:1 1 100%}
+.vfc-panel #phasePillsContainer{display:grid!important;grid-template-columns:1fr 1fr;gap:4px}
+.vfc-panel #phasePillsContainer>*{justify-content:flex-start}
+.vfc-coach div:has(> #coachStepTip:empty){display:none}.vfc-panel #coachStepBadge{white-space:nowrap}.vfc-panel #activeFormatBadge{display:none}.vfc-panel .vfc-coach .glass-card{background:rgba(2,6,23,.45);box-shadow:none;border-color:rgba(255,255,255,.07)}
+/* lay-a: links instellingen, rechts tekenen en fases */
+body.lay-a main,body.lay-b main{padding-left:262px!important}
+body.lay-a main{padding-right:262px!important}
+body.lay-a header,body.lay-b header{display:none!important}
+body.lay-a footer{display:none!important}
+body.lay-b footer{padding-left:262px!important}
+body.lay-a #coachingCard,body.lay-b #coachingCard{left:262px!important}
+body.lay-a #playerPopover{right:262px!important}
+/* lay-c: alles bovenin, compact */
+.vfc-top{display:flex;align-items:center;gap:8px;padding-right:10px;margin-right:2px;border-right:1px solid rgba(51,65,85,.7);flex:none}
+.vfc-top .vfc-crest{width:30px;height:30px;border-radius:10px;font-size:11px}
+.vfc-top b{font:800 13px/1 Inter,sans-serif;color:#fff;white-space:nowrap}
+.vfc-top .vfc-seg button{padding:6px 8px;flex:none}
+/* rustige stand (ingebed in het dashboard) */
+#vfcMini{position:fixed;left:50%;transform:translateX(-50%);bottom:10px;z-index:60;display:none;align-items:center;gap:6px;padding:5px 6px 5px 8px;border-radius:16px}
+#vfcMini .vfc-seg{flex:none}#vfcMini .vfc-seg button{padding:6px 9px;flex:none;white-space:nowrap}
+#vfcMini .vfc-btn{width:auto;padding:8px 11px;white-space:nowrap}
+#vfcMini b{font:800 12px/1 Inter,sans-serif;color:#fff;white-space:nowrap;margin:0 2px}
+body.vfc-calm #vfcMini{display:flex}
+body.vfc-calm .vfc-panel,body.vfc-calm header,body.vfc-calm footer,body.vfc-calm #coachingCard{display:none!important}
+body.vfc-calm main{padding:8px 8px 58px!important}
+body.focus-mode .vfc-panel{opacity:0;pointer-events:none}
+@media (max-width:720px){#vfcMini .hide-sm{display:none}}
 </style>
-<div id="vfcBar" style="display:none"></div>
 <script>
 (function(){
   let T = null;
   try{ const h = decodeURIComponent((location.hash || '').replace(/^#d=/, '')); if(h) T = JSON.parse(h); }catch(e){}
   if(!T || !T.players) return;
+  const qs = new URLSearchParams(location.search);
+  const LAY = /^[abc]$/.test(qs.get('lay') || '') ? qs.get('lay') : 'a';
+  const EMBED = window.top !== window;
   let labelMode = T.label || 'beide';
   const fmt = T.fmt || '6v6';
+  const FMT_TXT = {'4v4':'4 tegen 4','6v6':'6 tegen 6','8v8':'8 tegen 8','11v11':'11 tegen 11'};
+  const initials = (T.team || 'VFC').replace(/^VFC\s*/i,'').replace(/[^A-Z0-9]/gi,'').slice(0,3) || 'VFC';
+  const TIPS = {
+    vorm:'Je ziet alleen de spelvorm van jouw team, volgens de KNVB. Rondo is voor de training: een partijvorm met een paar spelers in een vak.',
+    type:'Kies wat je wilt laten zien. Basisformaties toont je opstelling; de andere speltypes zijn voorbeelden met bewegingen die je kunt afspelen.',
+    weer:'Zet looplijnen, speeldriehoeken, namen of de tegenstander aan of uit. Met het draai-icoon zet je het veld rechtop.',
+    teken:'Versleep spelers en bal, of teken een passlijn, looplijn of zone op het veld. Met de gum haal je de tekeningen weg.',
+    fase:'Een fase is een momentopname. Zet spelers neer, klik op + Fase, en speel daarna alle fases achter elkaar af.'
+  };
+  const H = (k, t) => '<div class="vfc-h"><span>' + t + '</span><button class="vfc-i" data-tip="' + k + '" aria-label="Uitleg ' + t + '">i</button></div><div class="vfc-tip" id="tip-' + k + '">' + TIPS[k] + '</div>';
+  const SEG = () => '<div class="vfc-seg">' + [['nr','Nr'],['naam','Naam'],['beide','Nr + naam']].map(([v,l]) => '<button data-l="' + v + '" class="' + (labelMode === v ? 'on' : '') + '">' + l + '</button>').join('') + '</div>';
+
   function rolesAndCoords(){
     const base = (SUB_FORMATIONS[fmt] || [])[0];
     const awayRoles = (base ? base.roles : []).map(r => [r[0], r[1]]);
     let slots = (T.lineup && T.lineup.length) ? T.lineup : null;
     if(!slots){
-      /* geen opstelling: neem de basisformatie van het bord en vul de spelers in volgorde in, keeper eerst */
       const tmp = buildScenarioData(fmt, 'formatie', 0), n = tmp.homePlayers.length;
       const ps = T.players.slice(); const ki = ps.findIndex(p => p.keeper || (p.pos || []).includes('K'));
       if(ki > 0) ps.unshift(ps.splice(ki, 1)[0]);
@@ -2965,47 +3037,105 @@ body.focus-mode #vfcBar{bottom:8px;opacity:.55}body.focus-mode #vfcBar:hover{opa
     showPlayerNames = labelMode !== 'nr';
     selectedPlayer = null; updatePhaseUI(); updateScrubberUI();
   }
-  function bar(){
-    const el = document.getElementById('vfcBar'); el.style.display = 'flex';
-    el.innerHTML = '<b>' + (T.team || 'Mijn team') + '</b>' +
-      [['nr','Nr'],['naam','Naam'],['beide','Nr + naam']].map(([v,l]) => '<button data-l="' + v + '" class="' + (labelMode === v ? 'on' : '') + '">' + l + '</button>').join('') +
-      '<span class="sep"></span><button data-a="team">Mijn opstelling</button><button data-a="pres">Presenteren</button><button data-a="png">Afbeelding opslaan</button><span class="sep"></span><button data-a="more" class="' + (document.body.classList.contains('vfc-calm') ? '' : 'on') + '">' + (document.body.classList.contains('vfc-calm') ? 'Meer opties' : 'Minder opties') + '</button>';
+  /* alleen de eigen spelvorm en Rondo tonen */
+  function limitFormats(){
+    document.querySelectorAll('#formatTabs [data-format]').forEach(b => { if(b.dataset.format !== fmt && b.dataset.format !== 'training') b.remove(); });
+    const own = document.querySelector('#formatTabs [data-format="' + fmt + '"]');
+    if(own){ const s = own.querySelectorAll('span'); if(s[0]) s[0].textContent = FMT_TXT[fmt] || fmt; if(s[1]) s[1].remove(); }
+    const tr = document.querySelector('#formatTabs [data-format="training"] span'); if(tr) tr.textContent = 'Rondo';
   }
+  const isBig = () => !document.body.classList.contains('vfc-calm');
+  function setBig(on){
+    document.body.classList.toggle('vfc-calm', !on);
+    if(EMBED) parent.postMessage({vfcTb: on ? 'big' : 'small'}, '*');
+    mini(); setTimeout(resizeCanvas, 80); setTimeout(resizeCanvas, 320);
+  }
+  function grab(sel){ const el = document.querySelector(sel); return el; }
+  function buildPanels(){
+    const toggles = ['btnTogglePaths','btnToggleTriangles','btnToggleNames','btnToggleOpponents'].map(id => document.getElementById(id)).filter(Boolean);
+    const rot = document.querySelector('header button[onclick="toggleOrientation()"]');
+    const focus = document.querySelector('header button[onclick="toggleFocusMode()"]');
+    const actions = '<div class="vfc-sec"><div class="vfc-tiles">' +
+        '<button class="vfc-tile" data-a="team" title="Zet je eigen opstelling terug"><i class="fa-solid fa-users"></i><span>Opstelling</span></button>' +
+        '<button class="vfc-tile" data-a="pres" title="Alleen het veld, zonder panelen"><i class="fa-solid fa-display"></i><span>Presenteren</span></button>' +
+        '<button class="vfc-tile" data-a="png" title="Afbeelding opslaan"><i class="fa-solid fa-image"></i><span>Opslaan</span></button></div>' +
+        (EMBED ? '<button class="vfc-btn gold" data-a="small"><i class="fa-solid fa-compress"></i>Terug naar het dashboard</button>' : '') + '</div>';
+    if(LAY === 'c'){
+      const g = document.createElement('div'); g.className = 'vfc-top';
+      g.innerHTML = '<span class="vfc-crest">' + initials + '</span><b>' + (T.team || '') + '</b>' + SEG();
+      const brand = document.querySelector('header .glass-bar > div > div'); brand.replaceWith(g);
+      limitFormats();
+      const right = document.querySelector('header .glass-bar > div:last-child');
+      const mk = (a, ic, t) => { const b = document.createElement('button'); b.dataset.a = a; b.title = t; b.className = 'w-8 h-8 rounded-xl bg-slate-900/70 hover:bg-slate-800 text-slate-300 hover:text-white border border-white/10 flex items-center justify-center transition'; b.innerHTML = '<i class="fa-solid ' + ic + ' text-xs"></i>'; return b; };
+      right.prepend(mk('png','fa-image','Afbeelding opslaan')); right.prepend(mk('team','fa-users','Mijn opstelling'));
+      if(EMBED){ const b = mk('small','fa-compress','Terug naar het dashboard'); b.classList.add('text-amber-300'); right.append(b); }
+      return;
+    }
+    const L = document.createElement('aside'); L.id = 'vfcLeft'; L.className = 'vfc-panel glass-bar ui-panel';
+    L.innerHTML = '<div class="vfc-team"><span class="vfc-crest">' + initials + '</span><div><b>' + (T.team || 'Mijn team') + '</b><small>' + (FMT_TXT[fmt] || fmt) + (T.formName ? ' · ' + T.formName : '') + '</small></div></div>' +
+      '<div class="vfc-sec"><div class="vfc-h"><span>Op de bolletjes</span></div>' + SEG() + '</div>' +
+      '<div class="vfc-sec" id="secVorm">' + H('vorm','Spelvorm') + '</div>' +
+      '<div class="vfc-sec" id="secType">' + H('type','Speltype') + '</div>' +
+      '<div class="vfc-sec" id="secWeer">' + H('weer','Weergave') + '<div class="vfc-row" id="rowWeer"></div></div>' +
+      (LAY === 'b' ? '' : '') + '<div style="flex:1"></div>' + actions;
+    document.body.appendChild(L);
+    limitFormats();
+    L.querySelector('#secVorm').append(grab('#formatTabs'));
+    L.querySelector('#secType').append(grab('#scenarioButtons'), grab('#subFormationPanel'));
+    const rw = L.querySelector('#rowWeer'); toggles.forEach(t => rw.append(t)); if(rot) rw.append(rot); if(focus) rw.append(focus);
+    if(LAY === 'a'){
+      const R = document.createElement('aside'); R.id = 'vfcRight'; R.className = 'vfc-panel glass-bar ui-panel';
+      R.innerHTML = '<div class="vfc-sec" id="secTeken">' + H('teken','Tekenen') + '</div><div class="vfc-sec" id="secFase">' + H('fase','Fases') + '<div class="vfc-play" id="rowPlay"></div></div>';
+      document.body.appendChild(R);
+      const ft = document.querySelector('footer .glass-bar');
+      const groups = ft.children; /* 0 afspelen, 1 fases, 2 tekenen */
+      const tools = groups[2]; tools.className = 'vfc-tools'; const gum = tools.querySelector('[onclick="clearDrawings()"]'); if(gum){ gum.className = 'tool-btn px-2.5 py-1.5 rounded-lg text-xs font-semibold text-rose-300 hover:bg-rose-500/15 transition flex items-center gap-1.5'; gum.insertAdjacentHTML('beforeend','<span>Wissen</span>'); } R.querySelector('#secTeken').append(tools);
+      R.querySelector('#rowPlay').append(groups[0]);
+      const mid = groups[0] || ft.querySelector('.flex-1');
+      const fases = ft.querySelector('#phasePillsContainer').closest('.flex-1.flex.items-center');
+      fases.className = 'vfc-fases';
+      const sp = fases.querySelector('.sm\\:flex'); if(sp) sp.classList.add('speedwrap');
+      R.querySelector('#secFase').append(fases);
+      const cc = document.getElementById('coachingCard'); if(cc){ R.append(cc); cc.className = 'vfc-coach'; }
+    }
+  }
+  function mini(){
+    let m = document.getElementById('vfcMini');
+    if(!m){ m = document.createElement('div'); m.id = 'vfcMini'; m.className = 'glass-bar'; document.body.appendChild(m); }
+    m.innerHTML = '<b>' + (T.team || '') + '</b>' + SEG() + '<button class="vfc-btn hide-sm" data-a="png"><i class="fa-solid fa-image"></i>Opslaan</button><button class="vfc-btn gold" data-a="big"><i class="fa-solid fa-expand"></i>Groter scherm en alle opties</button>';
+  }
+  function syncSeg(){ document.querySelectorAll('.vfc-seg button').forEach(b => b.classList.toggle('on', b.dataset.l === labelMode)); }
   document.addEventListener('click', e => {
-    const b = e.target.closest('#vfcBar button'); if(!b) return;
-    if(b.dataset.l){ labelMode = b.dataset.l; loadTeam(); bar(); }
+    const i = e.target.closest('.vfc-i'); if(i){ const t = document.getElementById('tip-' + i.dataset.tip); t.classList.toggle('on'); i.classList.toggle('on'); return; }
+    const b = e.target.closest('[data-l],[data-a]'); if(!b || !b.closest('.vfc-panel,#vfcMini,.vfc-top,header')) return;
+    if(b.dataset.l){ labelMode = b.dataset.l; loadTeam(); syncSeg(); }
     else if(b.dataset.a === 'team'){ if(currentFormat !== fmt) selectFormat(fmt); loadTeam(); }
-    else if(b.dataset.a === 'pres'){
-      const on = !document.fullscreenElement;
-      if(on && document.documentElement.requestFullscreen) document.documentElement.requestFullscreen().catch(() => {});
-      if(!on && document.exitFullscreen) document.exitFullscreen().catch(() => {});
-      if(isFocusMode !== on) toggleFocusMode();
-    }
-    else if(b.dataset.a === 'more'){
-      /* in het dashboard (klein venster) openen we de uitgebreide versie in een eigen venster */
-      if(window.top !== window && document.body.classList.contains('vfc-calm')){ window.open(location.href.split('#')[0].replace(/[?&]meer=1/, '') + (location.search ? '&' : '?') + 'meer=1' + location.hash, '_blank', 'noopener'); return; }
-      document.body.classList.toggle('vfc-calm'); bar(); setTimeout(resizeCanvas, 60);
-    }
+    else if(b.dataset.a === 'big') setBig(true);
+    else if(b.dataset.a === 'small') setBig(false);
+    else if(b.dataset.a === 'pres'){ if(!isFocusMode) toggleFocusMode(); }
     else if(b.dataset.a === 'png'){
       const a = document.createElement('a'); a.download = ((T.team || 'opstelling') + '.png').replace(/[^\w.\- ]+/g, ''); a.href = canvas.toDataURL('image/png'); document.body.appendChild(a); a.click(); a.remove();
     }
   });
-  document.addEventListener('fullscreenchange', () => { if(!document.fullscreenElement && isFocusMode) toggleFocusMode(); });
+  document.addEventListener('keydown', e => { if(e.key === 'Escape' && EMBED && isBig() && !isFocusMode) setBig(false); });
   const prev = window.onload;
   window.onload = function(){
-    /* rustige start: geen driehoeken, tegenstanders en looplijnen */
     showTriangles = false; showOpponents = false; showPaths = false;
     ['btnToggleTriangles','btnToggleOpponents','btnTogglePaths'].forEach(id => { const x = document.getElementById(id); if(x) x.classList.remove('icon-toggle-active'); });
-    if(!/[?&]meer=1/.test(location.search)) document.body.classList.add('vfc-calm');
+    document.body.classList.add('lay-' + LAY);
+    if(EMBED && !/[?&]meer=1/.test(location.search)) document.body.classList.add('vfc-calm');
     if(prev) prev();
     currentScenario = 'formatie';
     document.querySelectorAll('.scenario-btn').forEach(btn => btn.classList.toggle('scenario-pill-active', btn.dataset.scenario === 'formatie'));
     selectFormat(fmt);
-    loadTeam(); resizeCanvas(); bar();
-    if(typeof toggleCoachCardCollapse === 'function' && !isCoachCardCollapsed) toggleCoachCardCollapse();
+    buildPanels(); mini();
+    loadTeam(); resizeCanvas();
+    if(LAY !== 'a' && typeof toggleCoachCardCollapse === 'function' && !isCoachCardCollapsed) toggleCoachCardCollapse();
+    setTimeout(resizeCanvas, 150);
   };
 })();
 </script>
+
 
 </body>
 </html>
