@@ -1622,7 +1622,7 @@ function viewDash(){
   const res = m => m.gf > m.ga ? 'w' : m.gf === m.ga ? 'g' : 'v';
   const dot = (r, i, all) => `<span class="fd ${r}${i === all.length - 1 ? ' last' : ''}" style="animation-delay:${(0.1 + i * 0.13).toFixed(2)}s" title="${r==='w'?'gewonnen':r==='g'?'gelijk':'verloren'}"></span>`;
   const attOf = m => { const a = m.att || {}; return {yes:ps.filter(p => a[p.id] === 'ja'), no:ps.filter(p => a[p.id] === 'nee')}; };
-  const matchTitle = m => m.home ? `VFC – ${crest(m.opp, 18)}${esc(m.opp)}` : `${crest(m.opp, 18)}${esc(m.opp)} – VFC`;
+  const matchTitle = m => m.home ? `${crest('VFC', 18)}VFC – ${crest(m.opp, 18)}${esc(m.opp)}` : `${crest(m.opp, 18)}${esc(m.opp)} – ${crest('VFC', 18)}VFC`;
   const photo = dash.photo && dash.photo.url ? `<img class="hphoto" src="${esc(dash.photo.url)}" alt="Teamfoto ${esc(rec.team)}">` : `<div class="hphoto empty-photo"><span>Teamfoto</span></div>`;
   const upBtn = app.assets ? `<label class="link-btn upl">${dash.photo ? 'Andere foto' : 'Foto uploaden'}<input type="file" accept="image/*" data-photo="${esc(uidv)}|${esc(rec.key)}" hidden></label>` : '';
 
