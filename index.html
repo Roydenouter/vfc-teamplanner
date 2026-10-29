@@ -2536,7 +2536,7 @@ function adminConcepten(){
       ${row('Laatst bewaard', when(c.at || d._at))}
       ${row('Spelers', `${withMail} van ${pl.length} met mailadres`)}
       ${row('Staf', st.map(x => `${esc(x.name || '–')} <small class="hint">${esc(x.role || '')}${x.email ? ' · ' + esc(x.email) : ''}</small>`).join('<br>') || '–')}
-      ${row('Trainingen', tr.map(x => `${esc(x.day)} ${esc(x.from || '')}–${esc(x.to || '')}`).join(', ') || 'nog niet ingevuld')}
+      ${row('Trainingen', tr.map(x => `${esc((DAYS.find(q => String(q[1]) === String(x.day)) || [x.day])[0])} ${esc(x.from || '')}–${esc(x.to || '')}`).join(', ') || 'nog niet ingevuld')}
       ${row("Extra's", ex.map(i => esc(i.title)).join(', ') || 'nog niets gekozen')}
       </table>
       <details style="margin-top:8px"><summary class="link-btn" style="cursor:pointer">Spelers en contacten bekijken</summary><ul style="margin:8px 0 0;padding-left:18px">${pl.map(x => `<li><b>${esc(x.name)}</b> <small class="hint">${(x.contacts || []).filter(k => k.name || k.email).map(k => esc([k.name, k.email].filter(Boolean).join(' '))).join(' · ') || 'geen contact'}</small></li>`).join('')}</ul></details></div>`;
