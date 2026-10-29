@@ -1613,6 +1613,7 @@ function viewDash(){
   list.forEach(t => subDash(t.uid));
   if(!list.some(t => t.rec.key === app.dteam)) app.dteam = list[0].rec.key;
   const {uid:uidv, rec} = list.find(t => t.rec.key === app.dteam), dash = app.dash[rec.key] || {}, today = todayISO();
+  if(uidv === app.uid && !(dash.matches || []).length && !dash.seeded) autoSeed(uidv, rec);
   const ms = (dash.matches || []).slice().sort((a,b) => a.date.localeCompare(b.date) || String(a.time).localeCompare(String(b.time)));
   const st = matchStats(ms), next = ms.find(m => m.date >= today && !Number.isFinite(m.gf));
   const ps = plist(rec), pname = id => (rec.players.find(p => p.id === id) || {}).name || '–';
@@ -2736,17 +2737,27 @@ document.addEventListener('change', async e => {
 document.addEventListener('click', async e => {
   const b = e.target.closest('button'); if(!b || !b.dataset.testmatch) return;
   const [u, k] = b.dataset.testmatch.split('/'), dash = app.dash[k] || {};
-  const opp = ['Excelsior Maassluis','Vlaardingia','DSO','SVV','Zwaluwen','HVO'], base = new Date(), out = (dash.matches || []).slice();
-  const sat = new Date(base); sat.setDate(base.getDate() + ((6 - base.getDay() + 7) % 7 || 7));
-  for(let i = 0; i < 6; i++){ const d = new Date(sat); d.setDate(sat.getDate() + 7 * i); const iso = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-    if(out.some(m => m.date === iso)) continue; out.push({id:'t' + Date.now().toString(36) + i, date:iso, time:['10:00','11:30','12:45','14:30','10:30','13:00'].at(i), opp:opp.at(i) + ' ' + ((recByKey(k) || {}).team || '').replace(/^VFC\s*/, '').replace(/-\d+.*/, '-1'), home:i % 2 === 0, gf:null, ga:null, scorers:{}, att:{}, test:true}); }
+  const out = testUpcoming(recByKey(k) || {team:''}, dash, 6);
   try{ await saveDash(u, k, {matches:out}); app.note = {kind:'ok', text:'Zes testwedstrijden toegevoegd, de komende zaterdagen. Ze staan nu op het dashboard van dit team.'}; }catch(err){ app.note = {kind:'warn', text:'Toevoegen is niet gelukt.'}; }
   render();
 });
+function testUpcoming(rec, dash, n){
+  const opp = ['Excelsior Maassluis','Vlaardingia','DSO','SVV','Zwaluwen','HVO'], base = new Date(), out = (dash.matches || []).slice();
+  const sat = new Date(base); sat.setDate(base.getDate() + ((6 - base.getDay() + 7) % 7 || 7));
+  for(let i = 0; i < n; i++){ const d = new Date(sat); d.setDate(sat.getDate() + 7 * i); const iso = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    if(out.some(m => m.date === iso)) continue; out.push({id:'t' + Date.now().toString(36) + i, date:iso, time:['10:00','11:30','12:45','14:30','10:30','13:00'].at(i), opp:opp.at(i) + ' ' + (rec.team || '').replace(/^VFC\s*/, '').replace(/-\d+.*/, '-1'), home:i % 2 === 0, gf:null, ga:null, scorers:{}, att:{}, test:true}); }
+  return out;
+}
 /* testuitslagen: vijf gespeelde zaterdagen met uitslag en doelpuntenmakers, plus een stand (vanaf O11) */
 document.addEventListener('click', async e => {
   const b = e.target.closest('button'); if(!b || !b.dataset.testres) return;
   const [u, k] = b.dataset.testres.split('/'), dash = app.dash[k] || {}, rec = recByKey(k); if(!rec) return;
+  const patch = testResults(rec, dash);
+  try{ await saveDash(u, k, patch); app.note = {kind:'ok', text:`Vijf gespeelde testwedstrijden met uitslag en doelpuntenmakers toegevoegd${patch.stand ? ', plus een stand' : ''}. Kijk op het dashboard van ${rec.team}.`}; }catch(err){ app.note = {kind:'warn', text:'Toevoegen is niet gelukt.'}; }
+  render();
+});
+function testResults(rec, dash){
+  const k = rec.key;
   const short = rec.team.replace(/^VFC\s*/, '').replace(/-\d+.*/, '-1'), rnd = seeded(k + 'uitslag'), ps = plist(rec);
   const opp = ['Zwaluwen','VDL','Spartaan\'20','Hekelingen','CWO'], score = [[3,1],[1,1],[2,4],[5,0],[2,1]];
   const today = new Date(), sat = new Date(today); sat.setDate(today.getDate() - ((today.getDay() + 1) % 7 || 7));
@@ -2770,9 +2781,18 @@ document.addEventListener('click', async e => {
       rows.push({team:n, g:5, p:p2, ds:d2, form:forms.at(j), home:{g:3, p:Math.min(hp, 9), ds:hd, form:forms.at(j).slice(0, 3)}, away:{g:2, p:p2 - Math.min(hp, 9), ds:d2 - hd, form:forms.at(j).slice(3)}}); });
     patch.stand = rows;
   }
-  try{ await saveDash(u, k, patch); app.note = {kind:'ok', text:`Vijf gespeelde testwedstrijden met uitslag en doelpuntenmakers toegevoegd${patch.stand ? ', plus een stand' : ''}. Kijk op het dashboard van ${rec.team}.`}; }catch(err){ app.note = {kind:'warn', text:'Toevoegen is niet gelukt.'}; }
-  render();
-});
+  return patch;
+}
+/* proefperiode: een nieuw team krijgt bij de eerste keer openen vijf gespeelde en vijf komende testwedstrijden */
+async function autoSeed(uidv, rec){
+  app.seedTried = app.seedTried || {}; if(app.seedTried[rec.key] || !app.db) return; app.seedTried[rec.key] = true;
+  try{
+    const snap = await app.db.doc(`aanvragen/${uidv}/dash/${rec.key}`).get(), cur = snap.exists ? snap.data() : {};
+    if(cur.seeded || (cur.matches || []).length) return;
+    const patch = testResults(rec, cur); patch.matches = testUpcoming(rec, {matches:patch.matches}, 5); patch.seeded = true;
+    await saveDash(uidv, rec.key, patch); render();
+  }catch(e){}
+}
 /* ================= ronde 13: staf uitnodigen, gedeelde teams, team verwijderen ================= */
 const accessOf = s => s.access || (/teammanager|leider/i.test(s.role || '') ? 'lezen' : 'bewerken');
 const ACCESS_LBL = {lezen:'alleen kijken', bewerken:'kijken en aanpassen'};
