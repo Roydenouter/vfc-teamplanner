@@ -743,7 +743,7 @@ const ROLES = ['Trainer','Assistent-trainer','Leider','Teammanager'];
 const VELDEN = ['Veld 1','Veld 2','Veld 3'];
 const TRAIN_DAYS = [1,2,3,4,5];
 const GATHER = [15,30,45,60,75];
-const TIMES = (() => { const o = []; for(let m = 14*60; m <= 21*60; m += 15) o.push(`${String(Math.floor(m/60)).padStart(2,'0')}:${String(m%60).padStart(2,'0')}`); return o; })();
+const TIMES = (() => { const o = []; for(let m = 14*60; m <= 22*60; m += 15) o.push(`${String(Math.floor(m/60)).padStart(2,'0')}:${String(m%60).padStart(2,'0')}`); return o; })();
 const TEAMS = [
   ['Onder 7', ['VFC O7-1','VFC O7-2','VFC O7-3','VFC O7-4']],
   ['Onder 8', ['VFC O8-1','VFC O8-2','VFC O8-3','VFC O8-4','VFC O8-5']],
@@ -1169,7 +1169,7 @@ function basisBody(d, i){
       <div class="field"><label class="label" for="tr-v-${k}">Veld</label><select id="tr-v-${k}" data-tr="${k}" data-tk="veld"><option value="">Kies</option>${(t.veld && !VELDEN.includes(t.veld) ? [...VELDEN, t.veld] : VELDEN).map(v=>`<option ${v===t.veld?'selected':''}>${v}</option>`).join('')}</select></div>
       <button type="button" class="icon-btn" data-trdel="${k}" aria-label="Verwijder trainingsmoment ${k+1}" ${d.trainings.length<2?'disabled':''}>×</button></div>`).join('')}</div>
     <div><button type="button" class="ghost" id="addTraining">+ Trainingsmoment</button></div>
-    <p class="hint">De velden in de lijst zijn voorlopig; de echte namen vragen we na bij VFC.</p></div>`;
+    ${schemaHint(d)}</div>`;
   if(i.render === 'att') return `<div class="field"><span class="label">Totaaloverzicht naar</span>${st.length ? `<div class="checks">${st.map(s=>`<label><input type="checkbox" data-attto="${s.id}" ${attList(d).includes(s.id)?'checked':''}><span>${esc(staffLabel(s))}</span></label>`).join('')}</div>` : '<p class="hint">Voeg eerst bij Team een trainer of leider toe.</p>'}</div>
     <p class="hint">Geen melding bij elke aan- of afmelding: de trainer krijgt alleen het overzicht op vrijdagavond. De tussenstand is straks altijd te zien in het teamdashboard.</p>`;
   return '';
@@ -2553,10 +2553,15 @@ function adminIndeling(){
     <div class="btns"><label class="ghost upl" style="display:inline-flex;align-items:center;gap:8px;cursor:pointer">${icon('export')} Excel-bestand kiezen<input type="file" accept=".xlsx,.xls" data-indfile="1" hidden></label>
       ${app.ind ? `<button type="button" class="primary" data-indsave="1" ${app.busy ? 'disabled' : ''}>${app.ind.length} teams klaarzetten</button><button type="button" class="link-btn" data-indcancel="1">Annuleren</button>` : ''}
       ${app.indMsg ? `<span class="status">${esc(app.indMsg)}</span>` : ''}</div>
+    <div class="btns" style="margin-top:10px"><label class="ghost upl" style="display:inline-flex;align-items:center;gap:8px;cursor:pointer">${icon('export')} Trainingsschema kiezen<input type="file" accept=".xlsx,.xls" data-schfile="1" hidden></label>
+      ${app.sch ? `<button type="button" class="primary" data-schsave="1" ${app.busy ? 'disabled' : ''}>Bij ${app.sch.match.length} teams invullen</button><button type="button" class="link-btn" data-schcancel="1">Annuleren</button>` : ''}
+      ${app.schMsg ? `<span class="status">${esc(app.schMsg)}</span>` : ''}</div>
+    ${app.sch && app.sch.rest.length ? `<p class="hint">Niet in de teamindeling, dus niet ingevuld: ${esc(app.sch.rest.join(', '))}.</p>` : ''}
     ${indSugBox()}
-    ${list.length ? `<div class="tablewrap"><table class="indt"><thead><tr><th>Team</th><th class="nc">Spelers</th><th>Staf (uit de indeling)</th><th>Mailadres trainer</th><th>Status</th></tr></thead><tbody>
-      ${list.map(t => { const id = prepId(t.team), p = app.prep[id] || {}; return `<tr><td style="white-space:nowrap"><b>${esc(t.team)}</b></td><td class="nc">${t.players.length}${t.players.some(x => x.keeper) ? ` <small>(${t.players.filter(x => x.keeper).length} keeper)</small>` : ''}</td>
+    ${list.length ? `<div class="tablewrap"><table class="indt"><thead><tr><th>Team</th><th class="nc">Spelers</th><th>Staf (uit de indeling)</th><th>Trainingen (clubschema)</th><th>Mailadres trainer</th><th>Status</th></tr></thead><tbody>
+      ${list.map(t => { const id = prepId(t.team), p = app.prep[id] || {}, sch = app.sch ? (app.sch.match.find(m => m.team === t.team) || null) : p.schema; return `<tr><td style="white-space:nowrap"><b>${esc(t.team)}</b></td><td class="nc">${t.players.length}${t.players.some(x => x.keeper) ? ` <small>(${t.players.filter(x => x.keeper).length} keeper)</small>` : ''}</td>
         <td><small>${esc(t.staff.map(x => `${x.name} (${x.role.toLowerCase()})`).join(', ') || '–')}</small></td>
+        <td><small>${sch ? esc(schSummary(sch)) : '–'}</small>${app.sch && sch ? ' <small class="hint">(nieuw)</small>' : ''}</td>
         <td><input type="email" data-indmail="${esc(id)}" value="${esc((p.emails || []).join(', '))}" placeholder="trainer@voorbeeld.nl" ${app.prep[id] ? '' : 'disabled title="Eerst klaarzetten"'} aria-label="Mailadres trainer ${esc(t.team)}">${app.prep[id] ? `<button type="button" class="link-btn" data-indmailsave="${esc(id)}" style="margin-top:4px">${(p.emails || []).length ? 'Opgeslagen ✓' : 'Opslaan'}</button>` : ''}</td>
         <td style="white-space:nowrap">${status(t)}${app.prep[id] && !app.prep[id].claimedBy ? `<br><button type="button" class="link-btn" data-indc="${esc(id)}">${app.indOpen === id ? 'Sluiten' : 'Contacten'}</button>` : ''}</td></tr>
         ${app.indOpen === id && app.prep[id] ? indContacts(id) : ''}`; }).join('')}</tbody></table></div>
@@ -2607,6 +2612,142 @@ async function applyIndSug(which){
 document.addEventListener('click', e => {
   const b = e.target.closest('[data-indsug],[data-indsugno]'); if(!b) return;
   if(b.dataset.indsugno){ app.indSug = null; render(); } else applyIndSug(b.dataset.indsug);
+});
+/* ================= trainingsschema van de club ================= */
+/* Leest het trainingsschema (Excel met de tabbladen Trainingsschema, Keeperstraining en Kleedkamerindeling)
+   en geeft per team de trainingen, de keeperstraining en de kleedkamer terug. */
+const SCH_DAYS = {maandag:1, dinsdag:2, woensdag:3, donderdag:4, vrijdag:5, zaterdag:6, zondag:0};
+function schTeam(tok){
+  const t = String(tok || '').trim().toUpperCase().replace(/\s+/g, '');
+  if(!t) return null;
+  if(/^MO15/.test(t)) return 'VFC MO15-1';
+  if(/^MO20/.test(t)) return 'VFC MO20-1 (9-tal)';
+  let m = /^O?(\d+)-(\d+)$/.exec(t); if(m) return `VFC O${m[1]}-${m[2]}`;
+  m = /^ZA(\d+)$/.exec(t); if(m) return `VFC ${m[1]} (za)`;
+  m = /^KL(\d+)$/.exec(t); if(m) return `KelderLeague ${m[1]}`;
+  if(/^G1?$/.test(t)) return 'G-team';
+  return String(tok).trim();
+}
+function schExpand(cell){
+  const out = []; if(cell == null || cell === '') return out;
+  let cat = null;
+  String(cell).split(',').forEach(raw => {
+    let p = raw.trim(); if(!p) return;
+    let tot = null; const m = /\(\s*tot\s*(\d{1,2}:\d{2})\s*\)/i.exec(p); if(m){ tot = m[1].padStart(5, '0'); p = p.slice(0, m.index).trim(); }
+    p.split('+').map(s => s.trim()).filter(Boolean).forEach(s => {
+      const c = s.replace(/\s+/g, ''), m2 = /^(\d+)-(\d+)$/.exec(c);
+      if(m2){ cat = m2[1]; out.push([`VFC O${m2[1]}-${m2[2]}`, tot]); }
+      else if(/^\d+$/.test(c) && cat) out.push([`VFC O${cat}-${c}`, tot]);
+      else { const t = schTeam(s); if(t) out.push([t, tot]); }
+    });
+  });
+  return out;
+}
+const schSpan = s => { const m = /(\d{1,2}:\d{2})\s*-\s*(\d{1,2}:\d{2})/.exec(String(s || '')); return m ? [m[1].padStart(5, '0'), m[2].padStart(5, '0')] : [null, null]; };
+const schTime = v => { if(v == null || v === '') return null; if(typeof v === 'number'){ const m = Math.round(v * 1440); return `${String(Math.floor(m / 60)).padStart(2, '0')}:${String(m % 60).padStart(2, '0')}`; } const m = /(\d{1,2}):(\d{2})/.exec(String(v)); return m ? `${m[1].padStart(2, '0')}:${m[2]}` : null; };
+function parseSchema(XLSX, buf){
+  const wb = XLSX.read(buf, {type:'array', cellStyles:true}), teams = {}, extern = [];
+  const T = n => teams[n] || (teams[n] = {team:n, trainingen:[], keeper:[], kleedkamers:[], kleedkamerVast:''});
+  const dayOf = v => SCH_DAYS[String(v || '').trim().toLowerCase()];
+  const sheet = re => wb.SheetNames.find(n => re.test(n));
+  const rowsOf = sn => XLSX.utils.sheet_to_json(wb.Sheets[sn], {header:1, raw:true, defval:''});
+  const ts = sheet(/trainingsschema/i);
+  if(ts){ let day = null;
+    rowsOf(ts).forEach(r => {
+      if(dayOf(r[0]) != null){ day = dayOf(r[0]); return; } if(day == null) return;
+      [[0, 1, 'Veld 1'], [2, 3, 'Veld 2']].forEach(([tc, cc, veld]) => {
+        const [from, to] = schSpan(r[tc]); if(!from || !r[cc]) return;
+        schExpand(r[cc]).forEach(([team, tot]) => {
+          if(/aboutfootball/i.test(team)){ extern.push({day, from, to, veld, wie:team}); return; }
+          T(team).trainingen.push({day, from, to:tot || to, veld});
+        });
+      });
+    });
+  }
+  const ks = sheet(/keeper/i);
+  if(ks){ let day = null; const ws = wb.Sheets[ks], rows = rowsOf(ks);
+    const red = (ri, ci) => { const c = ws[XLSX.utils.encode_cell({r:ri, c:ci})], rgb = c && c.s && c.s.fgColor && c.s.fgColor.rgb; return !!rgb && /^(FF)?FF0000$/i.test(rgb); };
+    rows.forEach((r, ri) => {
+      if(dayOf(r[0]) != null){ day = dayOf(r[0]); return; } if(day == null) return;
+      [[0, 1, 'Veld 1'], [2, 3, 'Veld 2']].forEach(([tc, cc, veld]) => {
+        const [from, to] = schSpan(r[tc]); if(!from || !r[cc]) return;
+        schExpand(r[cc]).forEach(([team]) => T(team).keeper.push({day, from, to, veld, plek:String(r[4] || '').trim(), alleenMetKeeperstrainer:red(ri, cc)}));
+      });
+    });
+  }
+  const kk = sheet(/kleedkamer/i);
+  if(kk){ let day = null;
+    rowsOf(kk).slice(1).forEach(r => {
+      if(r[0] !== '' && r[1] !== '') T(schTeam(r[0])).kleedkamerVast = String(r[1]);
+      if(dayOf(r[3]) != null) day = dayOf(r[3]);
+      const tijd = schTime(r[4]); if(day == null || !tijd) return;
+      for(let i = 5; i < r.length - 1; i += 2){ if(r[i] !== '') T(schTeam(r[i])).kleedkamers.push({day, vanaf:tijd, kleedkamer:String(r[i + 1])}); }
+    });
+  }
+  /* Op elkaar aansluitende blokken op dezelfde dag worden één training. */
+  Object.values(teams).forEach(t => {
+    const s = t.trainingen.sort((a, b) => WEEK.indexOf(a.day) - WEEK.indexOf(b.day) || a.from.localeCompare(b.from)), out = [];
+    s.forEach(x => { const l = out.at(-1); if(l && l.day === x.day && l.to === x.from){ l.to = x.to; if(l.veld !== x.veld) l.veld = l.veld + ' / ' + x.veld; } else out.push({...x}); });
+    t.trainingen = out;
+  });
+  return {teams:Object.values(teams), extern};
+}
+const schLine = x => `${DN[x.day]} ${x.from}–${x.to}${x.veld ? ', ' + x.veld.toLowerCase() : ''}`;
+function schSummary(s){
+  if(!s) return '';
+  const kl = [...new Set((s.kleedkamers || []).map(k => k.kleedkamer))];
+  return [(s.trainingen || []).map(schLine).join(' · '),
+    (s.keeper || []).length ? 'keepers: ' + s.keeper.map(k => schLine(k) + (k.alleenMetKeeperstrainer ? ' (als er een keeperstrainer is)' : '')).join(' · ') : '',
+    kl.length ? 'kleedkamer ' + kl.join(' of ') : ''].filter(Boolean).join(' — ');
+}
+/* Trainingen uit het clubschema in het formaat van het formulier. */
+const schToForm = s => (s.trainingen || []).map(x => ({day:x.day, from:x.from, to:x.to, veld:x.veld}));
+const schSame = (d, s) => JSON.stringify(validTr(d).map(t => [+t.day, t.from, t.to, t.veld || ''])) === JSON.stringify(schToForm(s).map(t => [t.day, t.from, t.to, t.veld]));
+function mySchema(d){
+  const p = (app.mineprep || []).find(x => x.team === (d.team || '').trim() && x.schema);
+  return p ? p.schema : (d.clubSchema || null);
+}
+/* Onder de trainingsmomenten: wat het clubschema zegt, met een knop als het formulier er nog van afwijkt. */
+function schemaHint(d){
+  const s = mySchema(d);
+  if(!s) return '<p class="hint">Veld 1 en veld 2 zoals in het trainingsschema van de club.</p>';
+  const kl = [...new Set((s.kleedkamers || []).map(k => k.kleedkamer))];
+  const extra = [(s.keeper || []).length ? `Keeperstraining: ${s.keeper.map(k => `${DFULL[k.day]} ${k.from}–${k.to}, ${k.veld.toLowerCase()}${k.plek ? ' (' + k.plek.toLowerCase() + ')' : ''}${k.alleenMetKeeperstrainer ? ', gaat door zodra er een keeperstrainer is' : ''}`).join('; ')}.` : '',
+    kl.length ? `Kleedkamer bij de training: ${kl.join(' of ')}.` : ''].filter(Boolean).join(' ');
+  const same = schSame(d, s);
+  return `<div class="prep-banner" style="margin-top:4px"><div style="flex:1;min-width:220px"><b>${same ? 'Volgens het trainingsschema van de club' : 'Het trainingsschema van de club zegt'}</b>
+    <p>${esc((s.trainingen || []).map(x => `${DFULL[x.day]} ${x.from}–${x.to}, ${x.veld.toLowerCase()}`).join('; ') || 'geen vaste trainingen')}.${extra ? ' ' + esc(extra) : ''}</p>
+    ${same ? '' : '<div class="btns" style="margin-top:6px"><button type="button" class="primary" data-schuse="1">Neem het clubschema over</button></div>'}</div></div>`;
+}
+document.addEventListener('change', async e => {
+  const t = e.target; if(!t.dataset || !t.dataset.schfile) return;
+  const f = t.files && t.files[0]; if(!f) return;
+  app.schMsg = 'Trainingsschema wordt gelezen…'; render();
+  try{
+    await loadScript(XLSX_URL);
+    const res = parseSchema(window.XLSX, new Uint8Array(await f.arrayBuffer()));
+    const match = res.teams.filter(x => app.prep[prepId(x.team)]), rest = res.teams.filter(x => !app.prep[prepId(x.team)]).map(x => x.team);
+    app.sch = {match, rest};
+    app.schMsg = match.length ? `${match.length} teams gevonden die klaarstaan. Controleer de kolom Trainingen en klik op invullen.` : 'Geen enkel team uit het schema staat klaar. Lees eerst de teamindeling in.';
+  }catch(err){ app.sch = null; app.schMsg = 'Dit bestand kon niet gelezen worden.'; }
+  t.value = ''; render();
+});
+document.addEventListener('click', async e => {
+  const b = e.target.closest('[data-schsave],[data-schcancel]'); if(!b) return;
+  if(b.dataset.schcancel){ app.sch = null; app.schMsg = ''; render(); return; }
+  if(!app.db || !app.sch) return; app.busy = true; render(); let n = 0;
+  try{
+    for(const s of app.sch.match){ const id = prepId(s.team); const schema = {trainingen:s.trainingen, keeper:s.keeper, kleedkamers:s.kleedkamers, kleedkamerVast:s.kleedkamerVast || '', seizoen:'2026/27'};
+      await app.db.doc('voorbereid/' + id).update({schema, schemaAt:Date.now()}); app.prep[id] = {...app.prep[id], schema}; n++; }
+    app.schMsg = `Trainingsschema ingevuld bij ${n} teams. Trainers zien het bij Trainingen.`; app.sch = null;
+  }catch(err){ app.schMsg = `Invullen stopte na ${n} teams. Probeer het opnieuw.`; }
+  app.busy = false; render();
+});
+document.addEventListener('click', e => {
+  const b = e.target.closest('[data-schuse]'); if(!b || !app.d) return;
+  const s = mySchema(app.d); if(!s) return;
+  app.d.trainings = schToForm(s); if(!app.d.trainings.length) app.d.trainings = [{day:'', from:'', to:'', veld:''}];
+  app.d.clubSchema = s; save(); render();
 });
 function dedupStaff(list){
   const out = []; list.forEach(s => { const o = out.find(y => y.name.toLowerCase() === s.name.toLowerCase()); if(o){ if(!o.role.includes(s.role.toLowerCase())) o.role += ' en ' + s.role.toLowerCase(); } else out.push({...s}); });
@@ -2664,6 +2805,7 @@ function claimPrep(id){
   const meIx = p.staff.findIndex(st => st.name && st.name.length > 2 && local.includes(st.name.toLowerCase()));
   const meSt = meIx >= 0 ? p.staff[meIx] : null;
   d.staff = [{id:nid(), role:meSt ? roleOf(meSt) : 'Trainer', name:meSt ? meSt.name : '', email:window.tpUserEmail || '', phone:''}, ...p.staff.filter((st, k) => k !== meIx).map(st => ({id:nid(), role:roleOf(st), name:st.name, email:st.email || ''}))];
+  if(p.schema && (p.schema.trainingen || []).length){ d.trainings = schToForm(p.schema); d.clubSchema = p.schema; }
   norm(d); app.d = d; app.formOpen = true; app.tab = 'form'; app.step = 0; save(); render(); window.scrollTo({top:0, behavior:'smooth'});
   if(app.db) app.db.doc('voorbereid/' + id).update({claimedBy:app.uid || 'ja', claimedAt:Date.now()}).catch(() => {});
 }
@@ -2948,7 +3090,7 @@ async function deleteTeam(uidv, key){
 /* Clubbeheer: contactpersonen alvast klaarzetten bij een klaargezet team. */
 function indContacts(id){
   const p = app.prep[id];
-  return `<tr class="indc"><td colspan="5"><div class="group"><p class="hint">Vul in wat de club al weet. De trainer ziet het straks bij Team en Spelers en vult de rest aan. Wordt direct opgeslagen.</p>
+  return `<tr class="indc"><td colspan="6"><div class="group"><p class="hint">Vul in wat de club al weet. De trainer ziet het straks bij Team en Spelers en vult de rest aan. Wordt direct opgeslagen.</p>
     ${(p.staff || []).length ? `<div class="tablewrap"><table><thead><tr><th>Staf</th><th>Rol</th><th>Mailadres</th></tr></thead><tbody>${p.staff.map((x, k) => `<tr><td><b>${esc(x.name)}</b></td><td>${esc(x.role)}</td><td><input type="email" value="${esc(x.email || '')}" placeholder="mailadres" data-indst="${esc(id)}|${k}" aria-label="Mailadres ${esc(x.name)}"></td></tr>`).join('')}</tbody></table></div><p class="hint" style="margin:0">Na het versturen van het team krijgen zij een uitnodiging om mee te kijken.</p>` : ''}
     <div class="tablewrap"><table><thead><tr><th>Speler</th><th>Contactpersoon</th><th>Mailadres</th></tr></thead><tbody>
     ${p.players.map((x, k) => { const c = (x.contacts || [])[0] || {}; return `<tr><td><b>${esc(x.name)}</b></td>
